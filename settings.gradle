@@ -2,4 +2,5 @@ rootProject.name = 'reco'
 include 'reco-core'
 include 'reco-serializer-kryo'
 include 'reco-core-rmq'
+include 'reco-rpc'
 
