@@ -1,34 +1,23 @@
 package slatepowered.reco.rpc;
 
 import lombok.Data;
-import slatepowered.reco.rpc.function.RemoteFunction;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Data
 public class CompiledInterface {
 
-    final Class<?> klass;
-    final List<FuncMethod> methods;
-    final Map<Method, FuncMethod> methodMap;
+    final Class<?> klass;                                            // The interface which was compiled
+    final List<CompiledMethod> methods = new ArrayList<>();        // The compiled methods in this interface
+    final Map<Method, CompiledMethod> methodMap = new HashMap<>(); // The compiled methods by reflection method
 
-    // represents a method-function pair
-    // in a compiled interface
-    @Data
-    public static class FuncMethod {
-
-        final Method method;
-        final RemoteFunction function;
-        final boolean isAsync;
-        final FuncMethod sync;
-
-        public RemoteFunction syncFunction() {
-            if (isAsync && sync != null)
-                return sync.syncFunction();
-            return function;
-        }
+    public void register(CompiledMethod function) {
+        methods.add(function);
+        methodMap.put(function.method, function);
     }
 
 }

@@ -5,8 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface RemoteAPI {
+/**
+ * Simply denotes an API interface as being a possible remote API.
+ */
+public interface RemoteAPI {
 
 }

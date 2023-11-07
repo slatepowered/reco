@@ -2,6 +2,7 @@ package slatepowered.reco.rpc;
 
 import slatepowered.reco.Channel;
 import slatepowered.reco.Message;
+import slatepowered.reco.rpc.event.RemoteEvent;
 import slatepowered.reco.rpc.function.*;
 import slatepowered.veru.misc.Throwables;
 
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -34,7 +36,10 @@ public class RPCManager {
     private final Map<Class<?>, CompiledInterface> compiledInterfaceMap = new HashMap<>();
 
     /** Cached compiled methods. */
-    private final Map<Method, CompiledInterface.FuncMethod> compiledMethodCache = new HashMap<>();
+    private final Map<Method, CompiledMethod> compiledMethodCache = new HashMap<>();
+
+    /** The method compilation hooks. */
+    private final List<BiFunction<CompiledInterface, Method, CompiledMethod>> methodCompilerHooks = new ArrayList<>();
 
     public RPCManager(Channel localChannel) {
         this.localChannel = localChannel;
@@ -55,7 +60,7 @@ public class RPCManager {
                         RemoteFunction function = getFunction(call.getName());
 
                         // call implMethod locally
-                        Object ret = null; boolean success;
+                        Object ret; boolean success;
                         try {
                             if (function == null) {
                                 throw new UnsupportedFunctionException("Unknown function(" + call.getName() + ")");
@@ -112,6 +117,11 @@ public class RPCManager {
         } catch (Exception e) {
             throw new IllegalStateException("RPCManager initialization failed", e);
         }
+    }
+
+    public RPCManager addMethodCompilationHook(BiFunction<CompiledInterface, Method, CompiledMethod> hook) {
+        methodCompilerHooks.add(hook);
+        return this;
     }
 
     /**
@@ -171,8 +181,6 @@ public class RPCManager {
             Channel channel,
             Object... args) {
         CallExchange exchange = createExchange();
-
-        LOGGER.info("callRemote callId(" + exchange.getCallId() + ") function(" + function.getName() + ") channel(" + channel + ")");
 
         // create and send call message
         MCallRemote m = new MCallRemote(exchange.getCallId(), function.getName(), args);
@@ -235,16 +243,24 @@ public class RPCManager {
         return method.getClass().getName() + "." + method.getName();
     }
 
-    private CompiledInterface.FuncMethod compileMethod(Method method,
-                                                       Map<String, Integer> mNameMap) throws Exception {
-        CompiledInterface.FuncMethod fm = compiledMethodCache.get(method);
-        if (fm != null)
-            return fm;
+    private CompiledMethod compileMethod(CompiledInterface itf, Method method) throws Exception {
+        CompiledMethod compiledMethod = compiledMethodCache.get(method);
+        if (compiledMethod != null)
+            return compiledMethod;
 
         Class<?> klass = method.getDeclaringClass();
 
+        /* Checks for no functions */
         if (Modifier.isStatic(method.getModifiers())) return null;
         if (method.isAnnotationPresent(NoFunction.class)) return null;
+
+        // evaluate hooks
+        for (BiFunction<CompiledInterface, Method, CompiledMethod> hook : methodCompilerHooks) {
+            compiledMethod = hook.apply(itf, method);
+            if (compiledMethod != null) {
+                break;
+            }
+        }
 
         Class<?> returnType = method.getReturnType();
         if (CompletableFuture.class.isAssignableFrom(returnType)) {
@@ -252,144 +268,67 @@ public class RPCManager {
                 Create async function
              */
 
-            // find sync method
+            // try to find sync method
             String syncMethodName;
             String methodName = method.getName();
             if (methodName.endsWith("Async")) syncMethodName = methodName.substring(0, methodName.length() - 5);
             else syncMethodName = methodName + "Sync";
-            Method syncMethod = klass.getMethod(syncMethodName, method.getParameterTypes());
+            Method syncMethod;
+            try {
+                syncMethod = klass.getMethod(syncMethodName, method.getParameterTypes());
+            } catch (NoSuchMethodException e) {
+                throw new IllegalArgumentException("Could not find sync method for " + method);
+            }
 
             // find sync func
-            CompiledInterface.FuncMethod syncFm = compileMethod(syncMethod, mNameMap);
+            CompiledMethod syncCompiledMethod = compileMethod(itf, syncMethod);
+            compiledMethod = new CompiledAsyncMethod(method, syncCompiledMethod);
+        } else if (RemoteEvent.class.isAssignableFrom(returnType)) {
+            /*
+                Create event getter function
+             */
 
-            fm = new CompiledInterface.FuncMethod(method, null, true, syncFm);
+            // todo
         } else {
             /*
                 Create sync function
              */
 
-            // calculate function name
-            String name = getFunctionName(method);
-            int cnt = mNameMap.getOrDefault(name, 0);
-            if (cnt != 0) {
-                name += cnt;
-                mNameMap.put(name, cnt + 1);
-            }
-
-            // calculate arg types
-            List<Class<?>> argTypes = new ArrayList<>();
-            for (Class<?> kl : method.getParameterTypes()) {
-//                if (kl.isAnnotationPresent(Special.class)) continue;
-                argTypes.add(kl);
-            }
-
-            // create function
-            RemoteFunction function = new RemoteFunction(
-                    name,
-                    argTypes.toArray(new Class[0]),
-                    method.getReturnType()
-            );
-
-            fm = new CompiledInterface.FuncMethod(
-                    method, function, false, null);
+            compiledMethod = new CompiledSyncMethod(method);
         }
 
-        compiledMethodCache.put(method, fm);
-        return fm;
+        compiledMethodCache.put(method, compiledMethod);
+        return compiledMethod;
     }
 
     // compiles the given class into a
     // compiled proxy-able interface
     private CompiledInterface compileInterface(Class<?> klass) {
         try {
+            // check the cache
             CompiledInterface compiledInterface = compiledInterfaceMap.get(klass);
             if (compiledInterface != null)
                 return compiledInterface;
 
-            if (!klass.isAnnotationPresent(RemoteAPI.class))
+            // check if it is a valid remote API
+            if (!RemoteAPI.class.isAssignableFrom(klass))
                 return null;
 
             // compile methods
-            Map<String, Integer> mNameMap = new HashMap<>(); // map to store encountered names
-            List<CompiledInterface.FuncMethod> methods = new ArrayList<>();
-            Map<Method, CompiledInterface.FuncMethod> methodMap = new HashMap<>();
+            compiledInterface = new CompiledInterface(klass);
             for (Method method : klass.getMethods()) {
-                CompiledInterface.FuncMethod funcMethod = compileMethod(method, mNameMap);
+                CompiledMethod funcMethod = compileMethod(compiledInterface, method);
                 if (funcMethod == null)
                     continue;
-                methods.add(funcMethod);
-                methodMap.put(method, funcMethod);
                 register(funcMethod.getFunction());
             }
 
-            compiledInterface = new CompiledInterface(klass, methods, methodMap);
             compiledInterfaceMap.put(klass, compiledInterface);
             return compiledInterface;
         } catch (Exception e) {
             Throwables.sneakyThrow(e);
             return null;
         }
-    }
-
-    /**
-     * Creates a new proxy of the given interface
-     * class, with all methods bound to call the
-     * corresponding remote function and synchronously
-     * wait for the result.
-     *
-     * @param channel The remote channel.
-     * @param klass The interface class.
-     * @param <T> The interface type.
-     * @return The proxy.
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public <T> T bindRemoteAwait(Channel channel, Class<T> klass) {
-        final CompiledInterface compiledInterface = compileInterface(klass);
-        if (compiledInterface == null)
-            return null;
-        return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ klass },
-                ((proxy, method, args) -> {
-                    CompiledInterface.FuncMethod fm =
-                            compiledInterface.getMethodMap().get(method);
-                    if (fm == null) {
-                        return MethodUtils.invokeDefault(proxy, method, args);
-                    }
-
-                    RemoteFunction function = fm.getFunction();
-                    CompletableFuture<Object> future = callRemote(function, channel, args);
-
-                    return future.join();
-                }));
-    }
-
-    /**
-     * Creates a new proxy of the given interface
-     * class, with all methods bound to call the
-     * corresponding remote function,
-     * voiding any result.
-     *
-     * @param channel The remote channel.
-     * @param klass The interface class.
-     * @param <T> The interface type.
-     * @return The proxy.
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public <T> T bindRemoteVoid(Channel channel, Class<T> klass) {
-        final CompiledInterface compiledInterface = compileInterface(klass);
-        if (compiledInterface == null)
-            return null;
-        return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ klass },
-                ((proxy, method, args) -> {
-                    CompiledInterface.FuncMethod fm =
-                            compiledInterface.getMethodMap().get(method);
-                    if (fm == null) {
-                        return MethodUtils.invokeDefault(proxy, method, args);
-                    }
-
-                    RemoteFunction function = fm.getFunction();
-                    callRemote(function, channel, args);
-                    return null;
-                }));
     }
 
     /**
@@ -409,17 +348,12 @@ public class RPCManager {
             return null;
         return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ klass },
                 ((proxy, method, args) -> {
-                    CompiledInterface.FuncMethod fm =
-                            compiledInterface.getMethodMap().get(method);
-                    if (fm == null) {
+                    CompiledMethod cm = compiledInterface.getMethodMap().get(method);
+                    if (cm == null) {
                         return MethodUtils.invokeDefault(proxy, method, args);
                     }
 
-                    RemoteFunction function = fm.syncFunction();
-                    CompletableFuture<Object> future = callRemote(function, channel, args);
-
-                    if (fm.isAsync()) return future;
-                    else return future.join();
+                    return cm.proxyCall(this, channel, proxy, args);
                 }));
     }
 
@@ -440,12 +374,14 @@ public class RPCManager {
                 continue;
 
             // register handlers
-            for (CompiledInterface.FuncMethod fm : compiledInterface.getMethods()) {
-                if (fm.isAsync()) continue;
+            for (CompiledMethod fm : compiledInterface.getMethods()) {
+                // find impl
                 Method base = fm.getMethod();
                 Method impl = MethodUtils.findImplementation(handlerClass, base);
                 if (impl == null)
                     continue;
+
+                // create function and set handler
                 RemoteFunction function = fm.getFunction();
                 if (function == null)
                     continue;
