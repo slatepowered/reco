@@ -1,5 +1,5 @@
 version '1.0.0'
 
 dependencies {
-    api 'com.github.slatepowered.veru:veru-java8:064c82198c'
+    api 'com.github.slatepowered.veru:veru-java8:1d6bfb4501'
 }

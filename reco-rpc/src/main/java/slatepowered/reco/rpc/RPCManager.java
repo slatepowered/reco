@@ -4,6 +4,8 @@ import slatepowered.reco.Channel;
 import slatepowered.reco.Message;
 import slatepowered.reco.rpc.event.RemoteEvent;
 import slatepowered.reco.rpc.function.*;
+import slatepowered.reco.rpc.objects.*;
+import slatepowered.veru.collection.ArrayUtil;
 import slatepowered.veru.misc.Throwables;
 
 import java.lang.reflect.Method;
@@ -40,6 +42,9 @@ public class RPCManager {
 
     /** The method compilation hooks. */
     private final List<BiFunction<CompiledInterface, Method, CompiledMethod>> methodCompilerHooks = new ArrayList<>();
+
+    /** Cached compiled object classes. */
+    private final Map<Class<?>, CompiledObjectClass> compiledObjectClassMap = new HashMap<>();
 
     public RPCManager(Channel localChannel) {
         this.localChannel = localChannel;
@@ -282,19 +287,26 @@ public class RPCManager {
 
             // find sync func
             CompiledMethod syncCompiledMethod = compileMethod(itf, syncMethod);
-            compiledMethod = new CompiledAsyncMethod(method, syncCompiledMethod);
+            compiledMethod = new CompiledAsyncMethod(itf, method, syncCompiledMethod);
         } else if (RemoteEvent.class.isAssignableFrom(returnType)) {
             /*
                 Create event getter function
              */
 
             // todo
+        } else if (RemoteObject.class.isAssignableFrom(returnType)) {
+            /*
+                Create remote object creation function
+             */
+
+            CompiledObjectClass objectClass = compileObjectClass(itf, returnType);
+            compiledMethod = new LocalRemoteObjectMethod(itf, method, objectClass);
         } else {
             /*
                 Create sync function
              */
 
-            compiledMethod = new CompiledSyncMethod(method);
+            compiledMethod = new CompiledSyncMethod(itf, method);
         }
 
         compiledMethodCache.put(method, compiledMethod);
@@ -397,6 +409,77 @@ public class RPCManager {
         }
 
         return handler;
+    }
+
+    /**
+     * Compile the given remote API object class.
+     *
+     * @param apiItf The compiled API interface.
+     * @param klass The class.
+     * @return The compiled class.
+     */
+    public CompiledObjectClass compileObjectClass(CompiledInterface apiItf, Class<?> klass) {
+        CompiledObjectClass compiledObjectClass = compiledObjectClassMap.get(klass);
+        if (compiledObjectClass != null) {
+            return compiledObjectClass;
+        }
+
+        if (!RemoteObject.class.isAssignableFrom(klass))
+            return null;
+
+        compiledObjectClass = new CompiledObjectClass(klass);
+        for (Method method : klass.getMethods()) {
+            // check for UID method
+            if (method.isAnnotationPresent(UID.class)) {
+                compiledObjectClass.setUidMethod(method);
+                compiledObjectClass.setUidType(method.getReturnType());
+                continue;
+            }
+
+            // check for object method
+            ObjectMethod annotation = method.getAnnotation(ObjectMethod.class);
+            if (annotation != null) {
+                String apiMethodName = annotation.value();
+                if (apiMethodName.isEmpty()) apiMethodName = method.getName();
+
+                CompiledMethod compiledApiMethod;
+                try {
+                    Method apiMethod = apiItf.klass.getMethod(apiMethodName, ArrayUtil.concat(new Class[]{ klass }, method.getParameterTypes()));
+                    compiledApiMethod = apiItf.getMethodMap().get(apiMethod);
+                } catch (Throwable t) {
+                    Throwables.sneakyThrow(t);
+                    throw new AssertionError();
+                }
+
+                compiledObjectClass.getMethodMap().put(method, new CompiledObjectMethod(method, compiledApiMethod));
+                continue;
+            }
+        }
+
+        compiledObjectClassMap.put(klass, compiledObjectClass);
+        return compiledObjectClass;
+    }
+
+    /** Instantiates a remote object. */
+    public Object instantiateRemoteObject(CompiledObjectClass objectClass, CompiledInterface apiItf,
+                                          Channel channel,
+                                          Object apiInstance, Object uid) {
+        final Method uidMethod = objectClass.getUidMethod();
+
+        return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{objectClass.getKlass()}, (proxy, method, args) -> {
+            // handle UID method
+            if (method == uidMethod) {
+                return uid;
+            }
+
+            // handle other methods
+            CompiledObjectMethod cm = objectClass.getMethodMap().get(method);
+            if (cm == null) {
+                return MethodUtils.invokeDefault(proxy, method, args);
+            }
+
+            return cm.getApiMethod().proxyCall(this, channel, apiInstance, ArrayUtil.concat(new Object[]{ uid }, args));
+        });
     }
 
 }

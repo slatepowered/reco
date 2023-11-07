@@ -1,6 +1,7 @@
 package slatepowered.reco.rpc.function;
 
 import slatepowered.reco.Channel;
+import slatepowered.reco.rpc.CompiledInterface;
 import slatepowered.reco.rpc.CompiledMethod;
 import slatepowered.reco.rpc.RPCManager;
 
@@ -8,8 +9,8 @@ import java.lang.reflect.Method;
 
 public class CompiledSyncMethod extends CompiledMethod {
 
-    public CompiledSyncMethod(Method method) {
-        super(method);
+    public CompiledSyncMethod(CompiledInterface compiledInterface, Method method) {
+        super(compiledInterface, method);
     }
 
     @Override

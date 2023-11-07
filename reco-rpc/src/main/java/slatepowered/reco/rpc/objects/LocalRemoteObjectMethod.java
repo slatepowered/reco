@@ -1,32 +1,34 @@
-package slatepowered.reco.rpc.function;
+package slatepowered.reco.rpc.objects;
 
 import slatepowered.reco.Channel;
 import slatepowered.reco.rpc.CompiledInterface;
 import slatepowered.reco.rpc.CompiledMethod;
 import slatepowered.reco.rpc.RPCManager;
+import slatepowered.reco.rpc.function.CallExchange;
+import slatepowered.reco.rpc.function.RemoteFunction;
 
 import java.lang.reflect.Method;
 
-public class CompiledAsyncMethod extends CompiledMethod {
+public class LocalRemoteObjectMethod extends CompiledMethod {
 
     /**
-     * The synchronous method.
+     * The compiled object class.
      */
-    protected final CompiledMethod syncMethod;
+    protected final CompiledObjectClass objectClass;
 
-    public CompiledAsyncMethod(CompiledInterface compiledInterface, Method method, CompiledMethod syncMethod) {
+    public LocalRemoteObjectMethod(CompiledInterface compiledInterface, Method method, CompiledObjectClass objectClass) {
         super(compiledInterface, method);
-        this.syncMethod = syncMethod;
+        this.objectClass = objectClass;
     }
 
     @Override
     public CallExchange proxyCallExchange(RPCManager manager, Channel channel, Object instance, Object[] args) throws Throwable {
-        return syncMethod.proxyCallExchange(manager, channel, instance, args);
+        return CallExchange.completed(proxyCall(manager, channel, instance, args));
     }
 
     @Override
     public Object proxyCall(RPCManager manager, Channel channel, Object instance, Object[] args) throws Throwable {
-        return proxyCallExchange(manager, channel, instance, args).getResponseFuture();
+        return manager.instantiateRemoteObject(objectClass, compiledInterface, channel, instance, args[0]);
     }
 
     @Override

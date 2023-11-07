@@ -8,6 +8,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CallExchange {
 
+    public static CallExchange completed(Object o) {
+        CallExchange exchange = new CallExchange(0);
+        exchange.getResponseFuture().complete(o);
+        return exchange;
+    }
+
     /** The call ID. */
     private final long callId;
 

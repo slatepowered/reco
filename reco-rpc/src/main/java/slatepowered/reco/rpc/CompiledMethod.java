@@ -13,6 +13,11 @@ import java.lang.reflect.Method;
 public abstract class CompiledMethod {
 
     /**
+     * The compiled interface.
+     */
+    protected final CompiledInterface compiledInterface;
+
+    /**
      * The method this
      */
     protected final Method method;
