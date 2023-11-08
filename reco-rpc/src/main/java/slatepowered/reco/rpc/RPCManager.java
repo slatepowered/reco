@@ -74,14 +74,20 @@ public class RPCManager {
                         Boolean allow = null;
                         String[] securityGroups = securityManager != null ?
                                 securityManager.getSecurityGroups(this, message) :
-                                new String[] { "all" };
+                                null;
 
                         // check default permissions
-                        for (String g : securityGroups) {
-                            if (allowedGroups.contains(g)) {
-                                allow = true;
-                                break;
+                        if (!allowedGroups.contains("all")) {
+                            if (securityGroups != null) {
+                                for (String g : securityGroups) {
+                                    if (allowedGroups.contains(g)) {
+                                        allow = true;
+                                        break;
+                                    }
+                                }
                             }
+                        } else {
+                            allow = true;
                         }
 
                         // check with security manager
