@@ -639,6 +639,8 @@ public class RPCManager {
                     payload
             ));
 
+            localChannel.provider().publish(message);
+
             return new RemoteEventResult<>(); // todo idk
         } catch (Throwable t) {
             throw new RuntimeException("Failed to invoke remote event `" + itf.getName() + "#" + name + "`", t);
