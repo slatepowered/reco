@@ -10,7 +10,7 @@ public interface ChannelListener {
      * @param <P> The payload type.
      * @return The callback.
      */
-    <P> Callback<Message<P>> on();
+    <P> Callback<ReceivedMessage<P>> on();
 
     /**
      * Get a callback for any message received.
@@ -19,20 +19,20 @@ public interface ChannelListener {
      * @param removeOnComplete Whether to destroy the callback after it's called once.
      * @return The callback.
      */
-    <P> Callback<P> on(boolean removeOnComplete);
+    <P> Callback<ReceivedMessage<P>> on(boolean removeOnComplete);
 
     /**
      * Remove the given callback.
      *
      * @param callback The callback.
      */
-    void remove(Callback<? extends Message<?>> callback);
+    void remove(Callback<? extends ReceivedMessage<?>> callback);
 
     /**
      * Calls a message event.
      *
      * @param message The message.
      */
-    void call(Message<?> message);
+    void call(ReceivedMessage<?> message);
 
 }

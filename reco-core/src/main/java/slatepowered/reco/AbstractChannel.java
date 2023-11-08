@@ -27,7 +27,7 @@ public abstract class AbstractChannel implements ProvidedChannel {
     }
 
     @Override
-    public void received(Message<?> message) {
+    public void received(ReceivedMessage<?> message) {
         // call general listener
         listener.call(message);
         // get channel listener for type

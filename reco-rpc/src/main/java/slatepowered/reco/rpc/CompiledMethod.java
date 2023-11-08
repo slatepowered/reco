@@ -7,6 +7,7 @@ import slatepowered.reco.rpc.function.CallExchange;
 import slatepowered.reco.rpc.function.RemoteFunction;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 @RequiredArgsConstructor
 @Getter
@@ -21,6 +22,15 @@ public abstract class CompiledMethod {
      * The method this
      */
     protected final Method method;
+
+    /**
+     * The remote function name.
+     */
+    private String remoteFunctionName;
+
+    {
+        this.remoteFunctionName = composeRemoteFunctionName();
+    }
 
     /**
      * Invoked when this method is invoked locally
@@ -44,8 +54,12 @@ public abstract class CompiledMethod {
                                      Object instance,
                                      Object[] args) throws Throwable;
 
-    protected String getRemoteFunctionName() {
-        return method.getClass().getName() + "." + method.getName();
+    protected String composeRemoteFunctionName() {
+        return method.getClass().getName() + "." + method.getName() + Arrays.toString(method.getParameterTypes());
+    }
+
+    public String getRemoteFunctionName() {
+        return remoteFunctionName;
     }
 
     /**

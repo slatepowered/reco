@@ -10,33 +10,33 @@ import java.util.function.Consumer;
 public class SimpleChannelListener implements ChannelListener {
 
     // the callbacks
-    List<Callback<Message<?>>> callbacks = new ArrayList<>();
+    List<Callback<ReceivedMessage<?>>> callbacks = new ArrayList<>();
     // the callbacks to remove
-    List<Callback<Message<?>>> toRemove = new ArrayList<>();
+    List<Callback<ReceivedMessage<?>>> toRemove = new ArrayList<>();
 
     @Override
-    public Callback<Message<?>> on() {
+    public Callback<ReceivedMessage<?>> on() {
         return on(false);
     }
 
     @Override
-    public Callback<Message<?>> on(boolean removeOnComplete) {
-        Callback<Message<?>> callback = Callback.multi();
+    public Callback<ReceivedMessage<?>> on(boolean removeOnComplete) {
+        Callback<ReceivedMessage<?>> callback = Callback.multi();
         callbacks.add(callback);
         if (removeOnComplete)
-            callback.then((Consumer<Message<?>>) __ -> toRemove.add(callback));
+            callback.then(__ -> toRemove.add(callback));
         return callback;
     }
 
     @Override
-    public void remove(Callback<? extends Message<?>> callback) {
+    public void remove(Callback<? extends ReceivedMessage<?>> callback) {
         callbacks.remove(callback);
     }
 
     @Override
-    public void call(Message<?> message) {
+    public void call(ReceivedMessage<?> message) {
         // call all callbacks
-        for (Callback<Message<?>> callback : callbacks) {
+        for (Callback<ReceivedMessage<?>> callback : callbacks) {
             callback.call(message);
         }
 

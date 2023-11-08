@@ -15,6 +15,6 @@ public interface ProvidedChannel extends Channel {
      *
      * @param message The message to handle.
      */
-    void received(Message<?> message);
+    void received(ReceivedMessage<?> message);
 
 }

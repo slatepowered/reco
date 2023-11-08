@@ -4,6 +4,7 @@ import com.rabbitmq.client.*;
 import lombok.Data;
 import slatepowered.reco.BinaryCommunicationProvider;
 import slatepowered.reco.Message;
+import slatepowered.reco.ReceivedMessage;
 import slatepowered.reco.Serializer;
 import slatepowered.veru.misc.Throwables;
 
@@ -98,7 +99,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             // decode message body and properties
             DecodeResult decodeResult = decodeReceivedMessage(delivery.getBody());
             assert decodeResult != null;
-            Message<?> message = decodeResult.message;
+            ReceivedMessage<?> message = decodeResult.message;
 
             // call communication provider
             received(
@@ -118,7 +119,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
     static class DecodeResult {
         final Domain domain;
         final String sourceName;
-        final Message<?> message;
+        final ReceivedMessage<?> message;
     }
 
     // packs a message and its content
@@ -168,7 +169,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             String sourceName = dataStream.readUTF();
 
             // deserialize message content
-            Message<Object> message = new Message<>(name);
+            ReceivedMessage<Object> message = new ReceivedMessage<>(name);
             message.payload(serializer.read(dataStream));
 
             // return result

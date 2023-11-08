@@ -7,12 +7,11 @@ import java.util.Map;
 
 /**
  * A message which can be sent and received on
- * a channel. This class is final because subclasses
- * can't be reliably deserialized.
+ * a channel.
  *
  * @param <T> The type of the payload.
  */
-public final class Message<T> implements MessageLike<T> {
+public class Message<T> implements MessageLike<T> {
 
     @SuppressWarnings("unchecked")
     static <T> T throwR(Throwable t) {
@@ -28,8 +27,7 @@ public final class Message<T> implements MessageLike<T> {
     }
 
     public Message(String name) {
-        this.name     = name;
-        this.nameHash = name.hashCode();
+        this.name = name;
     }
 
     public Message(String name,
@@ -45,25 +43,19 @@ public final class Message<T> implements MessageLike<T> {
     }
 
     /**
-     * The channel this message was
-     * received on.
-     */
-    protected Channel channel;
-
-    /**
-     * The optional name.
-     * This is null if the message was received.
+     * The name of the message.
      */
     protected String name;
 
     /**
-     * The hash code of the message name.
+     * The payload value which is nullable.
      */
-    protected final int nameHash;
+    protected T content;
 
-    public int nameHash() {
-        return nameHash;
-    }
+    /**
+     * The metadata values (these are not serialized with the message).
+     */
+    protected Map<String, Object> meta;
 
     /**
      * Get the optional name.
@@ -73,48 +65,62 @@ public final class Message<T> implements MessageLike<T> {
     }
 
     /**
-     * Get the channel this message was received on.
+     * Get a meta value from this message.
+     *
+     * @param key The key.
+     * @param <T2> The return value type.
+     * @return The metadata value.
      */
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public Message setChannel(Channel channel) {
-        this.channel = channel;
-        return this;
-    }
-
-    // the object payload
-    // nullable
-    T content;
-
-    // the meta values
-    Map<String, Object> meta;
-
     @SuppressWarnings("unchecked")
     public <T2> T2 getMeta(String key) {
         if (meta == null) return null;
         return (T2) meta.get(key);
     }
 
+    /**
+     * Set a meta value on this message.
+     *
+     * @param key The key.
+     * @param value The value.
+     * @return This.
+     */
     public Message<T> setMeta(String key, Object value) {
         if (meta == null) meta = new HashMap<>();
         meta.put(key, value);
         return this;
     }
 
+    /**
+     * Check whether this message contains the given
+     * metadata key.
+     *
+     * @param key The key.
+     * @return Whether it contains it.
+     */
     public boolean hasMeta(String key) {
         return meta != null && meta.containsKey(key);
     }
 
+    /**
+     * Set the payload for this message.
+     *
+     * @param content The payload.
+     * @return This.
+     */
     public Message<T> payload(T content) {
         this.content = content;
         return this;
     }
 
+    /**
+     * Get the payload on this message.
+     *
+     * @param <T2> The casted return type.
+     * @return The payload or null.
+     */
     @SuppressWarnings("unchecked")
-    public <T> T payload() {
-        return (T) content;
+    public <T2 extends T> T2 payload() {
+        return (T2) content;
     }
 
     @Override

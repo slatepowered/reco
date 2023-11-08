@@ -5,16 +5,14 @@ import slatepowered.reco.Message;
 import slatepowered.reco.rpc.event.RemoteEvent;
 import slatepowered.reco.rpc.function.*;
 import slatepowered.reco.rpc.objects.*;
+import slatepowered.reco.rpc.security.InboundSecurityManager;
 import slatepowered.veru.collection.ArrayUtil;
 import slatepowered.veru.misc.Throwables;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -27,6 +25,9 @@ public class RPCManager {
 
     /** The local network channel. */
     private final Channel localChannel;
+
+    /** The inbound call security manager (nullable) */
+    private InboundSecurityManager securityManager;
 
     /** The registered functions. */
     private final Map<String, RemoteFunction> functionMap = new HashMap<>();
@@ -61,15 +62,43 @@ public class RPCManager {
         try {
             /* Listen for remote call. */
             localChannel.listen(MCallRemote.NAME)
-                    .on().then((message -> {
+                    .<MCallRemote>on().then((message -> {
                         MCallRemote call = message.payload();
                         long callId = call.getCallId();
                         Channel channel = message.getChannel();
 
                         RemoteFunction function = getFunction(call.getName());
 
-                        // call implMethod locally
+                        /* (!) check permissions */
+                        HashSet<String> allowedGroups = function.getAllowedSecurityGroups();
+                        Boolean allow = null;
+                        String[] securityGroups = securityManager != null ?
+                                securityManager.getSecurityGroups(this, message) :
+                                new String[] { "all" };
+
+                        // check default permissions
+                        for (String g : securityGroups) {
+                            if (allowedGroups.contains(g)) {
+                                allow = true;
+                                break;
+                            }
+                        }
+
+                        // check with security manager
+                        if (allow == null && securityManager != null) {
+                            allow = securityManager.checkInboundCall(this, message, securityGroups);
+                        }
+
+                        // return failed call result when lacking permission
+                        if (allow != Boolean.TRUE) {
+                            channel.send(new Message<>(MCallRemote.NAME).payload(new MCallResponse(callId, false, "Permission denied")));
+                            return;
+                        }
+
+                        // call the implementation locally
+                        // and send back the result
                         Object ret; boolean success;
+
                         try {
                             if (function == null) {
                                 throw new UnsupportedFunctionException("Unknown function(" + call.getName() + ")");
@@ -130,6 +159,15 @@ public class RPCManager {
 
     public RPCManager addMethodCompilationHook(BiFunction<CompiledInterface, Method, CompiledMethod> hook) {
         methodCompilerHooks.add(hook);
+        return this;
+    }
+
+    public InboundSecurityManager getInboundSecurityManager() {
+        return securityManager;
+    }
+
+    public RPCManager setInboundSecurityManager(InboundSecurityManager securityManager) {
+        this.securityManager = securityManager;
         return this;
     }
 

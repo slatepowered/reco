@@ -172,7 +172,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
     // the implementation should call this
     // to have any incoming messages handled
     // by the listeners
-    protected void received(Message<?> message,
+    protected void received(ReceivedMessage<?> message,
                             Domain domain,
                             String queue,
                             String source) {
@@ -180,14 +180,10 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
             return; // this can happen on publication channels
 
         // set message meta values
-        message.setMeta("source", source);
-        message.setMeta("queue", queue);
-        message.setMeta("domain", domain);
+        message.setSource(source);
+        message.setDomain(domain);
 
 //        System.out.println("[!] comm received src(" + source + ") domain(" + domain + ") name(" + message.name + ") content(" + message.content + ")");
-
-        // call general listener
-        super.received(message);
 
         // check for direct
         if (domain == Domain.DIRECT) {
@@ -199,6 +195,9 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
             }
 
             message.setChannel(channel);
+
+            // call general listener
+            super.received(message);
 
             // call listener
             channel.received(message);
@@ -212,9 +211,15 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
 
             message.setChannel(channel);
 
+            // call general listener
+            super.received(message);
+
             // call listener
             channel.received(message);
         } else if (domain == Domain.PUBLISH) {
+            // call general listener
+            super.received(message);
+
             // call publish channel
             if (pubChannel != null)
                 pubChannel.received(message);
