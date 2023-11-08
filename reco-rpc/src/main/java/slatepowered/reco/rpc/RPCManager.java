@@ -3,10 +3,7 @@ package slatepowered.reco.rpc;
 import slatepowered.reco.Channel;
 import slatepowered.reco.Message;
 import slatepowered.reco.ProvidedChannel;
-import slatepowered.reco.rpc.event.CompiledEventMethod;
-import slatepowered.reco.rpc.event.MCallEvent;
-import slatepowered.reco.rpc.event.RemoteEvent;
-import slatepowered.reco.rpc.event.RemoteEventResult;
+import slatepowered.reco.rpc.event.*;
 import slatepowered.reco.rpc.function.*;
 import slatepowered.reco.rpc.objects.*;
 import slatepowered.reco.rpc.security.InboundSecurityManager;
@@ -377,7 +374,15 @@ public class RPCManager {
                 Create event getter function
              */
 
-            RemoteEvent<?> remoteEvent = new RemoteEvent<>();
+            RemoteEvent<?> remoteEvent = new RemoteEvent<Object>() {
+                @Override
+                public Object getUIDFromPayload(Object o) {
+                    if (!(o instanceof ObjectEventPayload))
+                        return null;
+                    return ((ObjectEventPayload)o).getRemoteObjectUID();
+                }
+            };
+
             compiledMethod = new CompiledEventMethod(itf, method, remoteEvent);
             remoteEventMap.put(compiledMethod.getRemoteFunctionName(), remoteEvent);
         } else if (RemoteObject.class.isAssignableFrom(returnType)) {
@@ -552,16 +557,32 @@ public class RPCManager {
                 String apiMethodName = annotation.value();
                 if (apiMethodName.isEmpty()) apiMethodName = method.getName();
 
-                CompiledMethod compiledApiMethod;
-                try {
-                    Method apiMethod = apiItf.klass.getMethod(apiMethodName, ArrayUtil.concat(new Class[]{ klass }, method.getParameterTypes()));
-                    compiledApiMethod = apiItf.getMethodMap().get(apiMethod);
-                } catch (Throwable t) {
-                    Throwables.sneakyThrow(t);
-                    throw new AssertionError();
+                CompiledObjectMethod objectMethod = null;
+
+                // find event method
+                if (RemoteEvent.class.isAssignableFrom(method.getReturnType())) {
+                    objectMethod = new EventObjectMethod(compiledObjectClass, method, RemoteEvent.simple());
                 }
 
-                compiledObjectClass.getMethodMap().put(method, new CompiledObjectMethod(method, compiledApiMethod));
+                // find forwarding method
+                if (objectMethod == null) {
+                    CompiledMethod compiledApiMethod;
+                    try {
+                        Method apiMethod = apiItf.klass.getMethod(apiMethodName, ArrayUtil.concat(new Class[]{klass}, method.getParameterTypes()));
+                        compiledApiMethod = apiItf.getMethodMap().get(apiMethod);
+                    } catch (Throwable t) {
+                        Throwables.sneakyThrow(t);
+                        throw new AssertionError();
+                    }
+
+                    objectMethod = new ForwardingObjectMethod(compiledObjectClass, method, compiledApiMethod);
+                }
+
+                // register the compiled method
+                if (objectMethod != null) {
+                    compiledObjectClass.getMethodMap().put(method, objectMethod);
+                }
+
                 continue;
             }
         }
@@ -588,7 +609,7 @@ public class RPCManager {
                 return MethodUtils.invokeDefault(proxy, method, args);
             }
 
-            return cm.getApiMethod().proxyCall(this, channel, apiInstance, ArrayUtil.concat(new Object[]{ uid }, args));
+            return cm.proxyCall(this, channel, proxy, apiInstance, uid, args);
         });
     }
 
@@ -607,10 +628,9 @@ public class RPCManager {
         try {
             // find event method
             CompiledInterface compiledInterface = compileInterface(itf);
-            Method method = itf.getMethod(name);
-            CompiledMethod compiledMethod = compileMethod(compiledInterface, method);
+            CompiledMethod compiledMethod = compiledInterface != null ? compiledInterface.findMethodByName(name) : null;
             if (!(compiledMethod instanceof CompiledEventMethod)) {
-                throw new IllegalArgumentException("No event by name `" + itf.getName() + "#" + name + "`");
+                throw new IllegalArgumentException("No event by symbol `" + itf.getName() + "#" + name + "`");
             }
 
             Message<MCallEvent> message = new Message<>(MCallEvent.NAME);

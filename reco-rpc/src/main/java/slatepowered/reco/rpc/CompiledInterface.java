@@ -20,4 +20,14 @@ public class CompiledInterface {
         methodMap.put(function.method, function);
     }
 
+    public CompiledMethod findMethodByName(String name) {
+        for (CompiledMethod method : methods) {
+            if (method.getMethod().getName().equals(name)) {
+                return method;
+            }
+        }
+
+        return null;
+    }
+
 }

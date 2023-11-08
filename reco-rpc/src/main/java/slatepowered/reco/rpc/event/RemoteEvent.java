@@ -4,6 +4,8 @@ import slatepowered.veru.collection.Placement;
 import slatepowered.veru.functional.Callback;
 import slatepowered.veru.functional.HandlerResult;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -11,12 +13,28 @@ import java.util.function.Function;
  * Represents a remote event/callback.
  * todo: event functions
  */
-public class RemoteEvent<E> implements Callback<E> {
+public abstract class RemoteEvent<E> implements Callback<E> {
+
+    public static <T> RemoteEvent<T> simple() {
+        return new RemoteEvent<T>() {
+            @Override
+            public Object getUIDFromPayload(Object o) {
+                return null;
+            }
+        };
+    }
 
     /**
      * The callback to delegate to.
      */
     protected final Callback<E> callback = Callback.multi();
+
+    /**
+     * The child remote event objects by UID.
+     */
+    public final Map<Object, RemoteEvent<?>> byUID = new HashMap<>();
+
+    public abstract Object getUIDFromPayload(Object o);
 
     @Override
     public Callback<E> thenApply(Function<E, HandlerResult> handler) {
@@ -36,8 +54,16 @@ public class RemoteEvent<E> implements Callback<E> {
     }
 
     @Override
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void call(E value) {
         callback.call(value);
+        Object uid = getUIDFromPayload(value);
+        if (uid != null) {
+            RemoteEvent event = byUID.get(uid);
+            if (event != null) {
+                event.call(value);
+            }
+        }
     }
 
 }

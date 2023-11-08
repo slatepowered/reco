@@ -8,6 +8,8 @@ import slatepowered.reco.rpc.function.CallExchange;
 import slatepowered.reco.rpc.function.RemoteFunction;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CompiledEventMethod extends CompiledMethod {
 
