@@ -1,6 +1,7 @@
 package slatepowered.reco.rpc.security;
 
 import slatepowered.reco.Message;
+import slatepowered.reco.ReceivedMessage;
 import slatepowered.reco.rpc.RPCManager;
 import slatepowered.reco.rpc.function.MCallRemote;
 
@@ -18,7 +19,7 @@ public interface InboundSecurityManager {
      * @return Whether it is allowed.
      */
     boolean checkInboundCall(RPCManager manager,
-                             Message<MCallRemote> message,
+                             ReceivedMessage<MCallRemote> message,
                              String[] securityGroups);
 
     /**
@@ -30,6 +31,6 @@ public interface InboundSecurityManager {
      * @return The security groups.
      */
     String[] getSecurityGroups(RPCManager manager,
-                               Message<MCallRemote> message);
+                               ReceivedMessage<MCallRemote> message);
 
 }
