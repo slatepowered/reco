@@ -2,13 +2,18 @@ package slatepowered.reco.rpc;
 
 import slatepowered.reco.Channel;
 import slatepowered.reco.Message;
+import slatepowered.reco.ProvidedChannel;
+import slatepowered.reco.rpc.event.CompiledEventMethod;
+import slatepowered.reco.rpc.event.MCallEvent;
 import slatepowered.reco.rpc.event.RemoteEvent;
+import slatepowered.reco.rpc.event.RemoteEventResult;
 import slatepowered.reco.rpc.function.*;
 import slatepowered.reco.rpc.objects.*;
 import slatepowered.reco.rpc.security.InboundSecurityManager;
 import slatepowered.veru.collection.ArrayUtil;
 import slatepowered.veru.misc.Throwables;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
@@ -19,18 +24,25 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+/**
+ * Provides RPC, remote object and remote event services.
+ */
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class RPCManager {
 
     private static final Logger LOGGER = Logger.getLogger("RemoteManager");
 
     /** The local network channel. */
-    private final Channel localChannel;
+    private final ProvidedChannel localChannel;
 
     /** The inbound call security manager (nullable) */
     private InboundSecurityManager securityManager;
 
     /** The registered functions. */
     private final Map<String, RemoteFunction> functionMap = new HashMap<>();
+
+    /** The registered events. */
+    private final Map<String, RemoteEvent<?>> remoteEventMap = new HashMap<>();
 
     /** The outgoing call exchanges. */
     private final ConcurrentHashMap<Long, CallExchange> outgoingCalls = new ConcurrentHashMap<>();
@@ -47,11 +59,11 @@ public class RPCManager {
     /** Cached compiled object classes. */
     private final Map<Class<?>, CompiledObjectClass> compiledObjectClassMap = new HashMap<>();
 
-    public RPCManager(Channel localChannel) {
+    public RPCManager(ProvidedChannel localChannel) {
         this.localChannel = localChannel;
     }
 
-    public Channel getLocalChannel() {
+    public ProvidedChannel getLocalChannel() {
         return localChannel;
     }
 
@@ -156,6 +168,22 @@ public class RPCManager {
                         } else {
                             responseFuture.complete(value);
                         }
+                    })
+            );
+
+            /* Listen for event call. */
+            localChannel.provider().listen(MCallEvent.NAME)
+                    .on().<MCallEvent>then((message -> {
+                        MCallEvent mCallEvent = message.payload();
+
+                        // find remote event
+                        RemoteEvent remoteEvent = remoteEventMap.get(mCallEvent.getName());
+                        if (remoteEvent == null) {
+                            return;
+                        }
+
+                        // call remote event
+                        remoteEvent.call(mCallEvent.getPayload());
                     })
             );
         } catch (Exception e) {
@@ -296,6 +324,14 @@ public class RPCManager {
         return method.getClass().getName() + "." + method.getName();
     }
 
+    /**
+     * Compiles the given method for the given compiled
+     * interface.
+     *
+     * @param itf The interface.
+     * @param method The method.
+     * @return The compiled method.
+     */
     private CompiledMethod compileMethod(CompiledInterface itf, Method method) throws Exception {
         CompiledMethod compiledMethod = compiledMethodCache.get(method);
         if (compiledMethod != null)
@@ -341,7 +377,9 @@ public class RPCManager {
                 Create event getter function
              */
 
-            // todo
+            RemoteEvent<?> remoteEvent = new RemoteEvent<>();
+            compiledMethod = new CompiledEventMethod(itf, method, remoteEvent);
+            remoteEventMap.put(compiledMethod.getRemoteFunctionName(), remoteEvent);
         } else if (RemoteObject.class.isAssignableFrom(returnType)) {
             /*
                 Create remote object creation function
@@ -460,6 +498,26 @@ public class RPCManager {
             }
         }
 
+        // inject dependencies
+        for (Field f : handlerClass.getDeclaredFields()) {
+            if (Modifier.isStatic(f.getModifiers()) || !f.isAnnotationPresent(RemoteAPI.Inject.class)) continue;
+
+            Class<?> type = f.getType();
+            Object value = null;
+
+            /* check dependency types */
+            if (RPCManager.class.isAssignableFrom(type)) value = this;
+
+            if (value != null) {
+                try {
+                    f.setAccessible(true);
+                    f.set(handler, value);
+                } catch (Exception e) {
+                    Throwables.sneakyThrow(e);
+                }
+            }
+        }
+
         return handler;
     }
 
@@ -532,6 +590,39 @@ public class RPCManager {
 
             return cm.getApiMethod().proxyCall(this, channel, apiInstance, ArrayUtil.concat(new Object[]{ uid }, args));
         });
+    }
+
+    /**
+     * Invokes the remote event matching the given name
+     * in the given interface with the given payload of type
+     * {@code P} returning the result of the invocation.
+     *
+     * @param itf The declaring interface of the event.
+     * @param name The name of the remote event.
+     * @param payload The payload.
+     * @param <P> The payload type.
+     * @return The event invocation result.
+     */
+    public <P> RemoteEventResult<P> invokeRemoteEvent(Class<?> itf, String name, P payload) {
+        try {
+            // find event method
+            CompiledInterface compiledInterface = compileInterface(itf);
+            Method method = itf.getMethod(name);
+            CompiledMethod compiledMethod = compileMethod(compiledInterface, method);
+            if (!(compiledMethod instanceof CompiledEventMethod)) {
+                throw new IllegalArgumentException("No event by name `" + itf.getName() + "#" + name + "`");
+            }
+
+            Message<MCallEvent> message = new Message<>(MCallEvent.NAME);
+            message.payload(new MCallEvent(
+                    compiledMethod.getRemoteFunctionName(),
+                    payload
+            ));
+
+            return new RemoteEventResult<>(); // todo idk
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to invoke remote event `" + itf.getName() + "#" + name + "`", t);
+        }
     }
 
 }

@@ -10,4 +10,13 @@ import java.lang.annotation.Target;
  */
 public interface RemoteAPI {
 
+    /**
+     * Denotes that a field in a registered handler should be dependency injected.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    @interface Inject {
+
+    }
+
 }
