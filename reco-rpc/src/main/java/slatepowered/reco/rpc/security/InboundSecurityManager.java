@@ -7,7 +7,7 @@ import slatepowered.reco.rpc.function.MCallRemote;
 /**
  * Handles inbound calls from remote sources.
  */
-public abstract class InboundSecurityManager {
+public interface InboundSecurityManager {
 
     /**
      * Check whether the given inbound call is allowed.
@@ -17,9 +17,9 @@ public abstract class InboundSecurityManager {
      * @param securityGroups The security groups for the source node.
      * @return Whether it is allowed.
      */
-    public abstract boolean checkInboundCall(RPCManager manager,
-                                             Message<MCallRemote> message,
-                                             String[] securityGroups);
+    boolean checkInboundCall(RPCManager manager,
+                             Message<MCallRemote> message,
+                             String[] securityGroups);
 
     /**
      * Find the security groups for the given source node
@@ -29,7 +29,7 @@ public abstract class InboundSecurityManager {
      * @param message The call message.
      * @return The security groups.
      */
-    public abstract String[] getSecurityGroups(RPCManager manager,
-                                               Message<MCallRemote> message);
+    String[] getSecurityGroups(RPCManager manager,
+                               Message<MCallRemote> message);
 
 }
