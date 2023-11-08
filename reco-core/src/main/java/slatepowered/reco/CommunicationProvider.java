@@ -99,6 +99,11 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
         @Override public void publish(Message<?> message) { CommunicationProvider.this.publish(message); }
     };
 
+    @Override
+    public CommunicationProvider<?> provider() {
+        return this;
+    }
+
     /* Channels */
 
     /**
