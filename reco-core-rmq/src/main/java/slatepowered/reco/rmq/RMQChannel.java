@@ -1,6 +1,7 @@
 package slatepowered.reco.rmq;
 
 import slatepowered.reco.AbstractChannel;
+import slatepowered.reco.CommunicationProvider;
 import slatepowered.reco.Message;
 
 public class RMQChannel extends AbstractChannel {
@@ -51,4 +52,8 @@ public class RMQChannel extends AbstractChannel {
         return isAux;
     }
 
+    @Override
+    public CommunicationProvider<?> provider() {
+        return connection;
+    }
 }

@@ -50,6 +50,10 @@ public class RPCManager {
         this.localChannel = localChannel;
     }
 
+    public Channel getLocalChannel() {
+        return localChannel;
+    }
+
     /**
      * Start listening for requests.
      */
