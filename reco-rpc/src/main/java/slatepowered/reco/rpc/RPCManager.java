@@ -300,6 +300,10 @@ public class RPCManager {
              */
 
             CompiledObjectClass objectClass = compileObjectClass(itf, returnType);
+            if (method.getParameterTypes().length != 1 || !objectClass.getUidType().isAssignableFrom(method.getParameterTypes()[0])) {
+                throw new IllegalArgumentException(method + " is not a valid remote object getter, expected single UID parameter got " + method.getParameterTypes().length + " params");
+            }
+
             compiledMethod = new LocalRemoteObjectMethod(itf, method, objectClass);
         } else {
             /*
