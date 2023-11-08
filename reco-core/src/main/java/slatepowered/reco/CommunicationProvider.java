@@ -93,6 +93,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
 
     // the all channel
     protected Channel allChannel = new AbstractChannel() {
+        @Override public CommunicationProvider<?> provider() { return CommunicationProvider.this; }
         @Override public String remote() { return null; }
         @Override public void send(Message<?> message) { publish(message); }
         @Override public void publish(Message<?> message) { CommunicationProvider.this.publish(message); }
