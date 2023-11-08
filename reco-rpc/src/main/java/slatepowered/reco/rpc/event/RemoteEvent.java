@@ -13,6 +13,7 @@ import java.util.function.Function;
  * Represents a remote event/callback.
  * todo: event functions
  */
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public abstract class RemoteEvent<E> implements Callback<E> {
 
     public static <T> RemoteEvent<T> simple() {
@@ -33,6 +34,16 @@ public abstract class RemoteEvent<E> implements Callback<E> {
      * The child remote event objects by UID.
      */
     public final Map<Object, RemoteEvent<?>> byUID = new HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public RemoteEvent<E> byUID(Object uid) {
+        return (RemoteEvent<E>) byUID.computeIfAbsent(uid, __ -> RemoteEvent.simple());
+    }
+
+    public RemoteEvent<E> byUID(Object uid, RemoteEvent remoteEvent) {
+        byUID.put(uid, remoteEvent);
+        return this;
+    }
 
     public abstract Object getUIDFromPayload(Object o);
 

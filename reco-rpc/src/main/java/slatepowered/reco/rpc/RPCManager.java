@@ -558,24 +558,22 @@ public class RPCManager {
                 if (apiMethodName.isEmpty()) apiMethodName = method.getName();
 
                 CompiledObjectMethod objectMethod = null;
+                CompiledMethod apiMethod = apiItf.findMethodByName(apiMethodName);
 
                 // find event method
                 if (RemoteEvent.class.isAssignableFrom(method.getReturnType())) {
-                    objectMethod = new EventObjectMethod(compiledObjectClass, method, RemoteEvent.simple());
+                    if (!(apiMethod instanceof CompiledEventMethod))
+                        throw new IllegalArgumentException("Method `" + apiMethod.getMethod().getDeclaringClass().getName() + "#" + apiMethod.getMethod().getName() + "` does not have a valid corresponding API method");
+
+                    objectMethod = new EventObjectMethod(compiledObjectClass, method, (CompiledEventMethod) apiMethod);
                 }
 
                 // find forwarding method
                 if (objectMethod == null) {
-                    CompiledMethod compiledApiMethod;
-                    try {
-                        Method apiMethod = apiItf.klass.getMethod(apiMethodName, ArrayUtil.concat(new Class[]{klass}, method.getParameterTypes()));
-                        compiledApiMethod = apiItf.getMethodMap().get(apiMethod);
-                    } catch (Throwable t) {
-                        Throwables.sneakyThrow(t);
-                        throw new AssertionError();
-                    }
+                    if (apiMethod == null)
+                        throw new IllegalArgumentException("Method `" + apiMethod.getMethod().getDeclaringClass().getName() + "#" + apiMethod.getMethod().getName() + "` does not have a valid corresponding API method");
 
-                    objectMethod = new ForwardingObjectMethod(compiledObjectClass, method, compiledApiMethod);
+                    objectMethod = new ForwardingObjectMethod(compiledObjectClass, method, apiMethod);
                 }
 
                 // register the compiled method
@@ -597,6 +595,20 @@ public class RPCManager {
                                           Object apiInstance, Object uid) {
         final Method uidMethod = objectClass.getUidMethod();
 
+        // instantiate and register remote events
+        final Map<Method, RemoteEvent<?>> eventByMethodMap = new HashMap<>();
+        for (CompiledObjectMethod method : objectClass.getMethodMap().values()) {
+            if (method instanceof EventObjectMethod) {
+                EventObjectMethod eventObjectMethod = (EventObjectMethod) method;
+
+                RemoteEvent<?> remoteEvent = RemoteEvent.simple();
+                eventByMethodMap.put(method.getMethod(), remoteEvent);
+
+                eventObjectMethod.getApiMethod()
+                        .getRemoteEvent().byUID(uid, remoteEvent);
+            }
+        }
+
         return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{objectClass.getKlass()}, (proxy, method, args) -> {
             // handle UID method
             if (method == uidMethod) {
@@ -607,6 +619,11 @@ public class RPCManager {
             CompiledObjectMethod cm = objectClass.getMethodMap().get(method);
             if (cm == null) {
                 return MethodUtils.invokeDefault(proxy, method, args);
+            }
+
+            // handle event getter methods
+            if (cm instanceof EventObjectMethod) {
+                return eventByMethodMap.get(method);
             }
 
             return cm.proxyCall(this, channel, proxy, apiInstance, uid, args);

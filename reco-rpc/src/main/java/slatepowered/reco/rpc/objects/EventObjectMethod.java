@@ -2,29 +2,29 @@ package slatepowered.reco.rpc.objects;
 
 import slatepowered.reco.Channel;
 import slatepowered.reco.rpc.RPCManager;
-import slatepowered.reco.rpc.event.RemoteEvent;
+import slatepowered.reco.rpc.event.CompiledEventMethod;
 
 import java.lang.reflect.Method;
 
-public class EventObjectMethod extends CompiledObjectMethod {
+public final class EventObjectMethod extends CompiledObjectMethod {
 
     /**
-     * The remote event.
+     * The API event method.
      */
-    protected final RemoteEvent<?> remoteEvent;
+    protected final CompiledEventMethod apiMethod;
 
-    public EventObjectMethod(CompiledObjectClass objectClass, Method method, RemoteEvent<?> remoteEvent) {
+    public EventObjectMethod(CompiledObjectClass objectClass, Method method, CompiledEventMethod apiMethod) {
         super(objectClass, method);
-        this.remoteEvent = remoteEvent;
+        this.apiMethod = apiMethod;
     }
 
-    public RemoteEvent<?> getRemoteEvent() {
-        return remoteEvent;
+    public CompiledEventMethod getApiMethod() {
+        return apiMethod;
     }
 
     @Override
     public Object proxyCall(RPCManager manager, Channel channel, Object uid, Object apiInstance, Object instance, Object[] args) throws Throwable {
-        return remoteEvent;
+        throw new AssertionError("This should not be called");
     }
 
 }
