@@ -7,6 +7,7 @@ import slatepowered.reco.rpc.function.RemoteFunction;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Iterator;
 
 @Getter
 public abstract class CompiledMethod {
@@ -55,7 +56,16 @@ public abstract class CompiledMethod {
                                      Object[] args) throws Throwable;
 
     protected String composeRemoteFunctionName() {
-        return method.getClass().getName() + "." + method.getName() + Arrays.toString(method.getParameterTypes());
+        StringBuilder b = new StringBuilder("[");
+        boolean first = true;
+        for (Class<?> param : method.getParameterTypes()) {
+            if (first) first = false;
+            else b.append(", ");
+
+            b.append(param.getName());
+        }
+
+        return method.getDeclaringClass().getName() + "." + method.getName() + b;
     }
 
     public String getRemoteFunctionName() {
