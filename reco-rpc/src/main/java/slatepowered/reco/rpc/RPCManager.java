@@ -385,9 +385,9 @@ public class RPCManager {
             RemoteEvent<?> remoteEvent = new RemoteEvent<Object>() {
                 @Override
                 public Object getUIDFromPayload(Object o) {
-                    if (!(o instanceof ObjectEventPayload))
+                    if (!(o instanceof ObjectEvent))
                         return null;
-                    return ((ObjectEventPayload)o).getRemoteObjectUID();
+                    return ((ObjectEvent)o).getRemoteObjectUID();
                 }
             };
 

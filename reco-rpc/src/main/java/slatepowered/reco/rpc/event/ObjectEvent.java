@@ -4,7 +4,7 @@ package slatepowered.reco.rpc.event;
  * An event which can be bound to a remote object
  * and therefore has a remote object UID.
  */
-public interface ObjectEventPayload {
+public interface ObjectEvent {
 
     /**
      * Get the UID of the remote object this
