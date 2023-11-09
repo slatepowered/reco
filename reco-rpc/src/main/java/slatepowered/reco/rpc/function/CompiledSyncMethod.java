@@ -9,8 +9,15 @@ import java.lang.reflect.Method;
 
 public class CompiledSyncMethod extends CompiledMethod {
 
+    /**
+     * The remote function.
+     */
+    protected final RemoteFunction function;
+
     public CompiledSyncMethod(CompiledInterface compiledInterface, Method method) {
         super(compiledInterface, method);
+
+        this.function = new RemoteFunction(getRemoteFunctionName(), method.getParameterTypes(), method.getReturnType());
     }
 
     @Override
@@ -26,7 +33,7 @@ public class CompiledSyncMethod extends CompiledMethod {
 
     @Override
     public RemoteFunction getFunction() {
-        return new RemoteFunction(getRemoteFunctionName(), method.getParameterTypes(), method.getReturnType());
+        return function;
     }
 
 }

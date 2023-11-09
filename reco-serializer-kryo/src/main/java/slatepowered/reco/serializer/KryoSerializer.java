@@ -37,6 +37,7 @@ public class KryoSerializer implements Serializer {
     public void write(OutputStream stream, Object object) throws IOException {
         Output output = new Output(stream);
         kryoLocal.get().writeClassAndObject(output, object);
+        output.flush();
     }
 
 }

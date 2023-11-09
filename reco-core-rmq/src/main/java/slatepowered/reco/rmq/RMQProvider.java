@@ -60,6 +60,8 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
 
             // declare communication exchange
             rmqChannel.exchangeDeclare(EXCHANGE_NAME, "topic");
+
+            bind();
         } catch (Exception e) {
             Throwables.sneakyThrow(e);
         }

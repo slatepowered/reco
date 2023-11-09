@@ -1,8 +1,11 @@
 package slatepowered.reco.rpc.function;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class MCallRemote {
 
     public static final String NAME = "rpcivk";
@@ -10,16 +13,16 @@ public class MCallRemote {
     /**
      * The call ID of the exchange.
      */
-    final long callId;
+    long callId;
 
     /**
      * The name of the remote function.
      */
-    final String name;
+    String name;
 
     /**
      * The arguments for the call.
      */
-    final Object[] args;
+    Object[] args;
 
 }

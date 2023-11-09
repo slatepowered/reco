@@ -58,6 +58,9 @@ public class RPCManager {
 
     public RPCManager(ProvidedChannel localChannel) {
         this.localChannel = localChannel;
+
+        // start automatically
+        this.start();
     }
 
     public ProvidedChannel getLocalChannel() {
@@ -79,7 +82,7 @@ public class RPCManager {
                         RemoteFunction function = getFunction(call.getName());
 
                         /* (!) check permissions */
-                        HashSet<String> allowedGroups = function.getAllowedSecurityGroups();
+                        Set<String> allowedGroups = function.getAllowedSecurityGroups();
                         Boolean allow = null;
                         String[] securityGroups = securityManager != null ?
                                 securityManager.getSecurityGroups(this, message) :
@@ -106,7 +109,7 @@ public class RPCManager {
 
                         // return failed call result when lacking permission
                         if (allow != Boolean.TRUE) {
-                            channel.send(new Message<>(MCallRemote.NAME).payload(new MCallResponse(callId, false, "Permission denied")));
+                            channel.send(new Message<>(MCallResponse.NAME).payload(new MCallResponse(callId, false, "Permission denied")));
                             return;
                         }
 
@@ -134,7 +137,7 @@ public class RPCManager {
                         }
 
                         // send response
-                        channel.send(new Message<>(MCallRemote.NAME).payload(new MCallResponse(callId, success, ret)));
+                        channel.send(new Message<>(MCallResponse.NAME).payload(new MCallResponse(callId, success, ret)));
                     })
             );
 
@@ -221,6 +224,7 @@ public class RPCManager {
     public RPCManager register(RemoteFunction function) {
         if (function == null)
             return this;
+
         functionMap.put(function.getName(), function);
         return this;
     }
@@ -229,8 +233,8 @@ public class RPCManager {
         return System.currentTimeMillis() ^ System.nanoTime();
     }
 
-    private CallExchange createExchange() {
-        CallExchange e = new CallExchange(nextCallId());
+    private CallExchange createExchange(RemoteFunction function) {
+        CallExchange e = new CallExchange(nextCallId(), function);
         outgoingCalls.put(e.getCallId(), e);
         return e;
     }
@@ -258,7 +262,7 @@ public class RPCManager {
             RemoteFunction function,
             Channel channel,
             Object... args) {
-        CallExchange exchange = createExchange();
+        CallExchange exchange = createExchange(function);
 
         // create and send call message
         MCallRemote m = new MCallRemote(exchange.getCallId(), function.getName(), args);
@@ -401,7 +405,14 @@ public class RPCManager {
                 Create sync function
              */
 
+            Set<String> allowedGroups = null;
+            Allow allowAnnotation = method.getAnnotation(Allow.class);
+            if (allowAnnotation != null) {
+                allowedGroups = new HashSet<>(Arrays.asList(allowAnnotation.value()));
+            }
+
             compiledMethod = new CompiledSyncMethod(itf, method);
+            compiledMethod.getFunction().setAllowedSecurityGroups(allowedGroups);
         }
 
         compiledMethodCache.put(method, compiledMethod);
@@ -489,6 +500,8 @@ public class RPCManager {
                 Method impl = MethodUtils.findImplementation(handlerClass, base);
                 if (impl == null)
                     continue;
+                
+                impl.setAccessible(true);
 
                 // create function and set handler
                 RemoteFunction function = fm.getFunction();

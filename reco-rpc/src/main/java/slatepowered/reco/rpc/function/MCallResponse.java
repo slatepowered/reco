@@ -1,24 +1,27 @@
 package slatepowered.reco.rpc.function;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class MCallResponse {
 
     /**
      * The call exchange ID.
      */
-    final long callId;
+    long callId;
 
     /**
      * Whether the call was successful.
      */
-    final boolean success;
+    boolean success;
 
     /**
      * The return value of the call.
      */
-    final Object value;
+    Object value;
 
     public static final String NAME = "rpcres";
 

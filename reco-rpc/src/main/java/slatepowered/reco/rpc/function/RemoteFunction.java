@@ -1,6 +1,8 @@
 package slatepowered.reco.rpc.function;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 public class RemoteFunction {
 
@@ -17,7 +19,7 @@ public class RemoteFunction {
     private FunctionHandler handler;
 
     /** All security groups allowed. */
-    private HashSet<String> allowedSecurityGroups;
+    private Set<String> allowedSecurityGroups;
 
     public RemoteFunction(String name, Class<?>[] argTypes, Class<?> returnType) {
         this.name = name;
@@ -34,11 +36,11 @@ public class RemoteFunction {
         return this;
     }
 
-    public HashSet<String> getAllowedSecurityGroups() {
-        return allowedSecurityGroups;
+    public Set<String> getAllowedSecurityGroups() {
+        return allowedSecurityGroups == null ? Collections.emptySet() : allowedSecurityGroups;
     }
 
-    public RemoteFunction setAllowedSecurityGroups(HashSet<String> allowedSecurityGroups) {
+    public RemoteFunction setAllowedSecurityGroups(Set<String> allowedSecurityGroups) {
         this.allowedSecurityGroups = allowedSecurityGroups;
         return this;
     }

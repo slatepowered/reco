@@ -1,19 +1,22 @@
 package slatepowered.reco.rpc.event;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class MCallEvent {
 
     /**
      * The name of the remote event.
      */
-    final String name;
+    String name;
 
     /**
      * The payload for the call.
      */
-    final Object payload;
+    Object payload;
 
     public static final String NAME = "rpcive";
 

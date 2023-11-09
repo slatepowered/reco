@@ -188,7 +188,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
         // check for direct
         if (domain == Domain.DIRECT) {
             // route to channels
-            C channel = getChannelByRemote(source);
+            C channel = channel(source);
             if (channel == null) {
                 logger.warning("Direct message received from unknown remote '" + source + "'");
                 return;
@@ -203,7 +203,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
             channel.received(message);
         } else if (domain == Domain.AUX) {
             // route to channels
-            C channel = getChannelByRemote(queue);
+            C channel = auxChannel(queue);
             if (channel == null) {
                 logger.warning("Direct message received from unknown aux channel '" + queue + "'");
                 return;

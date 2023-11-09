@@ -32,8 +32,9 @@ public abstract class AbstractChannel implements ProvidedChannel {
         listener.call(message);
         // get channel listener for type
         ChannelListener l = listenerMap.get(message.name);
-        if (l != null)
+        if (l != null) {
             l.call(message);
+        }
     }
 
 }
