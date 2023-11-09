@@ -67,7 +67,9 @@ public abstract class RemoteEvent<E> implements Callback<E> {
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void call(E value) {
+        System.out.println("event called: " + value);
         callback.call(value);
+
         Object uid = getUIDFromPayload(value);
         if (uid != null) {
             RemoteEvent event = byUID.get(uid);
