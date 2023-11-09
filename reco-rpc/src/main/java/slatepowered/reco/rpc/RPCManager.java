@@ -604,6 +604,10 @@ public class RPCManager {
                 RemoteEvent<?> remoteEvent = RemoteEvent.simple();
                 eventByMethodMap.put(method.getMethod(), remoteEvent);
 
+                // todo: unregister this on garbage collection
+                //  of the returned instance (maybe? or the uid?)
+                //  otherwise this could cause some stupid fucking
+                //  memory leak
                 eventObjectMethod.getApiMethod()
                         .getRemoteEvent().byUID(uid, remoteEvent);
             }

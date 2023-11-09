@@ -41,8 +41,10 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
      * @param port The port (if -1 default is used).
      * @param username The username.
      * @param password The password.
+     * @param virtualHost The virtual host name.
      */
-    public RMQProvider connect(String host, int port, String username, String password) {
+    public RMQProvider connect(String host, int port, String username, String password,
+                               String virtualHost) {
         try {
             // create connection
             ConnectionFactory factory = new ConnectionFactory();
@@ -50,7 +52,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             if (port >= 0) factory.setPort(port);
             factory.setUsername(username);
             factory.setPassword(password);
-            factory.setVirtualHost("np");
+            factory.setVirtualHost(virtualHost);
             rmqConnection = factory.newConnection();
 
             // create channel
