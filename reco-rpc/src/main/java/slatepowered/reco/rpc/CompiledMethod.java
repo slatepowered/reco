@@ -1,7 +1,6 @@
 package slatepowered.reco.rpc;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import slatepowered.reco.Channel;
 import slatepowered.reco.rpc.function.CallExchange;
 import slatepowered.reco.rpc.function.RemoteFunction;
@@ -9,7 +8,6 @@ import slatepowered.reco.rpc.function.RemoteFunction;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-@RequiredArgsConstructor
 @Getter
 public abstract class CompiledMethod {
 
@@ -28,7 +26,9 @@ public abstract class CompiledMethod {
      */
     private String remoteFunctionName;
 
-    {
+    protected CompiledMethod(CompiledInterface compiledInterface, Method method) {
+        this.compiledInterface = compiledInterface;
+        this.method = method;
         this.remoteFunctionName = composeRemoteFunctionName();
     }
 
