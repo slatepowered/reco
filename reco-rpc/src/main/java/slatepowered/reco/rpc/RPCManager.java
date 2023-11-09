@@ -80,6 +80,10 @@ public class RPCManager {
                         Channel channel = message.getChannel();
 
                         RemoteFunction function = getFunction(call.getName());
+                        if (function == null) {
+                            channel.send(new Message<>(MCallResponse.NAME).payload(new MCallResponse(callId, false, "Unknown function `" + call.getName() + "` (local: " + localChannel.remote() + ")")));
+                            return;
+                        }
 
                         /* (!) check permissions */
                         Set<String> allowedGroups = function.getAllowedSecurityGroups();
@@ -500,7 +504,7 @@ public class RPCManager {
                 Method impl = MethodUtils.findImplementation(handlerClass, base);
                 if (impl == null)
                     continue;
-                
+
                 impl.setAccessible(true);
 
                 // create function and set handler

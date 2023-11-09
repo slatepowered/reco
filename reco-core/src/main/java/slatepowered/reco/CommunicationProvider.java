@@ -288,7 +288,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
 
     @Override
     public String remote() {
-        return null;
+        return localName;
     }
 
     @Override
