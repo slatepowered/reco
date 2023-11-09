@@ -128,11 +128,12 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
         if (pubChannel != null)
             if (remote.equals(pubChannel.remote()))
                 return pubChannel;
-        // get by remote or this
-        C channel = channelsByRemote.get(remote);
-        if (channel == null)
+
+        if (remote.equals(this.localName))
             return (C) this;
-        return channel;
+
+        // get by remote or this
+        return channelsByRemote.get(remote);
     }
 
     /**
@@ -236,7 +237,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
      * @see CommunicationProvider#newChannel(String, boolean)
      */
     public C channel(String remote) {
-        C channel = channelsByRemote.get(remote);
+        C channel = getChannelByRemote(remote);
         if (channel != null)
             return channel;
         return newChannel(remote, false);
@@ -252,7 +253,7 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
      * @see CommunicationProvider#newChannel(String, boolean)
      */
     public C auxChannel(String remote) {
-        C channel = channelsByRemote.get(remote);
+        C channel = getChannelByRemote(remote);
         if (channel != null)
             return channel;
         return newChannel(remote, true);

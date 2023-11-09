@@ -80,7 +80,7 @@ public class RPCManager {
                         Channel channel = message.getChannel();
 
                         RemoteFunction function = getFunction(call.getName());
-                        if (function == null) {
+                        if (function == null || function.getHandler() == null) {
                             LOGGER.warning("Attempt to call unknown function `" + call.getName() + "`");
                             channel.send(new Message<>(MCallResponse.NAME).payload(new MCallResponse(callId, false, "Unknown function `" + call.getName() + "` (local: " + localChannel.remote() + ")")));
                             return;
