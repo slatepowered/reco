@@ -1,6 +1,5 @@
 package slatepowered.reco.rpc;
 
-import jdk.internal.ref.Cleaner;
 import slatepowered.reco.Channel;
 import slatepowered.reco.Message;
 import slatepowered.reco.ProvidedChannel;
@@ -26,6 +25,16 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class RPCManager {
+
+    private static final Method METHOD_finalize;
+
+    static {
+        try {
+            METHOD_finalize = Object.class.getDeclaredMethod("finalize");
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private static final Logger LOGGER = Logger.getLogger("RemoteManager");
 
@@ -629,7 +638,21 @@ public class RPCManager {
             }
         }
 
-        Object instance = Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{objectClass.getKlass()}, (proxy, method, args) -> {
+        return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{objectClass.getKlass()}, (proxy, method, args) -> {
+            if (method == METHOD_finalize) {
+                // todo: this doesnt fucking work because im pretty
+                //  sure finalize() doesnt go through the invocation
+                //  handler which sucks because Cleaner doesnt
+                //  exist in stupid fucking java 8
+                for (CompiledObjectMethod com : objectClass.getMethodMap().values()) {
+                    if (com instanceof EventObjectMethod) {
+                        EventObjectMethod eventObjectMethod = (EventObjectMethod) com;
+
+                        eventObjectMethod.getApiMethod().getRemoteEvent().removeByUID(uid);
+                    }
+                }
+            }
+
             // handle UID method
             if (method == uidMethod) {
                 return uid;
@@ -648,20 +671,6 @@ public class RPCManager {
 
             return cm.proxyCall(this, channel, proxy, apiInstance, uid, args);
         });
-
-        // unregister handlers on garbage collection
-        // of the object instance
-        Cleaner.create(instance, () -> {
-            for (CompiledObjectMethod method : objectClass.getMethodMap().values()) {
-                if (method instanceof EventObjectMethod) {
-                    EventObjectMethod eventObjectMethod = (EventObjectMethod) method;
-
-                    eventObjectMethod.getApiMethod().getRemoteEvent().removeByUID(uid);
-                }
-            }
-        });
-
-        return instance;
     }
 
     /**
