@@ -26,7 +26,12 @@ public class ForwardingObjectMethod extends CompiledObjectMethod {
     }
 
     @Override
-    public Object proxyCall(RPCManager manager, Channel channel, Object uid, Object apiInstance, Object instance, Object[] args) throws Throwable {
+    public Object proxyCall(RPCManager manager,
+                            Channel channel,
+                            Object instance,
+                            Object apiInstance,
+                            Object uid,
+                            Object[] args) throws Throwable {
         return apiMethod.proxyCall(manager, channel, apiInstance, ArrayUtil.concat(new Object[]{ uid }, args));
     }
 

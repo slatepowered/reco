@@ -9,14 +9,14 @@ import slatepowered.reco.rpc.function.RemoteFunction;
 
 import java.lang.reflect.Method;
 
-public class LocalRemoteObjectMethod extends CompiledMethod {
+public class RemoteObjectGetter extends CompiledMethod {
 
     /**
      * The compiled object class.
      */
     protected final CompiledObjectClass objectClass;
 
-    public LocalRemoteObjectMethod(CompiledInterface compiledInterface, Method method, CompiledObjectClass objectClass) {
+    public RemoteObjectGetter(CompiledInterface compiledInterface, Method method, CompiledObjectClass objectClass) {
         super(compiledInterface, method);
         this.objectClass = objectClass;
     }

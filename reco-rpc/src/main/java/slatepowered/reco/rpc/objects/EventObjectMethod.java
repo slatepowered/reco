@@ -23,7 +23,12 @@ public final class EventObjectMethod extends CompiledObjectMethod {
     }
 
     @Override
-    public Object proxyCall(RPCManager manager, Channel channel, Object uid, Object apiInstance, Object instance, Object[] args) throws Throwable {
+    public Object proxyCall(RPCManager manager,
+                            Channel channel,
+                            Object instance,
+                            Object apiInstance,
+                            Object uid,
+                            Object[] args) throws Throwable {
         throw new AssertionError("This should not be called");
     }
 

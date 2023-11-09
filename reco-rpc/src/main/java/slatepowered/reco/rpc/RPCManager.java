@@ -7,7 +7,6 @@ import slatepowered.reco.rpc.event.*;
 import slatepowered.reco.rpc.function.*;
 import slatepowered.reco.rpc.objects.*;
 import slatepowered.reco.rpc.security.InboundSecurityManager;
-import slatepowered.veru.collection.ArrayUtil;
 import slatepowered.veru.misc.Throwables;
 
 import java.lang.reflect.Field;
@@ -404,7 +403,7 @@ public class RPCManager {
                 throw new IllegalArgumentException(method + " is not a valid remote object getter, expected single UID parameter got " + method.getParameterTypes().length + " params");
             }
 
-            compiledMethod = new LocalRemoteObjectMethod(itf, method, objectClass);
+            compiledMethod = new RemoteObjectGetter(itf, method, objectClass);
         } else {
             /*
                 Create sync function
