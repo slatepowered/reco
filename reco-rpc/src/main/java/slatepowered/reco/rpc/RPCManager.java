@@ -113,7 +113,7 @@ public class RPCManager {
 
                         // return failed call result when lacking permission
                         if (allow != Boolean.TRUE) {
-                            channel.send(new Message<>(MCallResponse.NAME).payload(new MCallResponse(callId, false, "Permission denied")));
+                            channel.send(new Message<>(MCallResponse.NAME).payload(new MCallResponse(callId, false, "Permission denied for `" + call.getName() + "` (local: " + localChannel.remote() + ")")));
                             return;
                         }
 
