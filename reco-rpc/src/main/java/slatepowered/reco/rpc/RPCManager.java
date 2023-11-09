@@ -329,7 +329,7 @@ public class RPCManager {
      * @param method The method.
      * @return The compiled method.
      */
-    private CompiledMethod compileMethod(CompiledInterface itf, Method method) throws Exception {
+    protected CompiledMethod compileMethod(CompiledInterface itf, Method method) throws Exception {
         CompiledMethod compiledMethod = compiledMethodCache.get(method);
         if (compiledMethod != null)
             return compiledMethod;
@@ -410,7 +410,7 @@ public class RPCManager {
 
     // compiles the given class into a
     // compiled proxy-able interface
-    private CompiledInterface compileInterface(Class<?> klass) {
+    protected CompiledInterface compileInterface(Class<?> klass) {
         try {
             // check the cache
             CompiledInterface compiledInterface = compiledInterfaceMap.get(klass);
@@ -422,7 +422,7 @@ public class RPCManager {
                 return null;
 
             // compile methods
-            compiledInterface = new CompiledInterface(klass);
+            compiledInterface = new CompiledInterface(this, klass);
             for (Method method : klass.getMethods()) {
                 CompiledMethod funcMethod = compileMethod(compiledInterface, method);
                 if (funcMethod == null)
