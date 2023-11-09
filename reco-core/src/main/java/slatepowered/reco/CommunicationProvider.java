@@ -184,8 +184,6 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
         message.setSource(source);
         message.setDomain(domain);
 
-//        System.out.println("[!] comm received src(" + source + ") domain(" + domain + ") name(" + message.name + ") content(" + message.content + ")");
-
         // check for direct
         if (domain == Domain.DIRECT) {
             // route to channels

@@ -45,6 +45,11 @@ public abstract class RemoteEvent<E> implements Callback<E> {
         return this;
     }
 
+    public RemoteEvent<E> removeByUID(Object uid) {
+        byUID.remove(uid);
+        return this;
+    }
+
     public abstract Object getUIDFromPayload(Object o);
 
     @Override
@@ -67,7 +72,6 @@ public abstract class RemoteEvent<E> implements Callback<E> {
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void call(E value) {
-        System.out.println("event called: " + value);
         callback.call(value);
 
         Object uid = getUIDFromPayload(value);

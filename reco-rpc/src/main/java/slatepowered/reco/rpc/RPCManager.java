@@ -1,5 +1,6 @@
 package slatepowered.reco.rpc;
 
+import jdk.internal.ref.Cleaner;
 import slatepowered.reco.Channel;
 import slatepowered.reco.Message;
 import slatepowered.reco.ProvidedChannel;
@@ -177,7 +178,7 @@ public class RPCManager {
 
             /* Listen for event call. */
             localChannel.provider().listen(MCallEvent.NAME)
-                    .on().<MCallEvent>then((message -> {
+                    .on().then((message -> {
                         MCallEvent mCallEvent = message.payload();
 
                         // find remote event
@@ -623,16 +624,12 @@ public class RPCManager {
                 RemoteEvent<?> remoteEvent = RemoteEvent.simple();
                 eventByMethodMap.put(method.getMethod(), remoteEvent);
 
-                // todo: unregister this on garbage collection
-                //  of the returned instance (maybe? or the uid?)
-                //  otherwise this could cause some stupid fucking
-                //  memory leak
                 eventObjectMethod.getApiMethod()
                         .getRemoteEvent().byUID(uid, remoteEvent);
             }
         }
 
-        return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{objectClass.getKlass()}, (proxy, method, args) -> {
+        Object instance = Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{objectClass.getKlass()}, (proxy, method, args) -> {
             // handle UID method
             if (method == uidMethod) {
                 return uid;
@@ -651,6 +648,20 @@ public class RPCManager {
 
             return cm.proxyCall(this, channel, proxy, apiInstance, uid, args);
         });
+
+        // unregister handlers on garbage collection
+        // of the object instance
+        Cleaner.create(instance, () -> {
+            for (CompiledObjectMethod method : objectClass.getMethodMap().values()) {
+                if (method instanceof EventObjectMethod) {
+                    EventObjectMethod eventObjectMethod = (EventObjectMethod) method;
+
+                    eventObjectMethod.getApiMethod().getRemoteEvent().removeByUID(uid);
+                }
+            }
+        });
+
+        return instance;
     }
 
     /**

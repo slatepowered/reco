@@ -1,7 +1,9 @@
 package test.slatepowered.reco;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.junit.jupiter.api.Test;
 import slatepowered.reco.CommunicationProvider;
 import slatepowered.reco.rmq.RMQProvider;
@@ -12,6 +14,7 @@ import slatepowered.reco.rpc.event.RemoteEvent;
 import slatepowered.reco.rpc.function.Allow;
 import slatepowered.reco.serializer.KryoSerializer;
 
+import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
 public class RemoteEventTest {
@@ -24,6 +27,7 @@ public class RemoteEventTest {
 
     @NoArgsConstructor
     @AllArgsConstructor
+    @Data
     public static class MyEvent implements ObjectEvent {
         private String object;
         private String message;
@@ -67,6 +71,10 @@ public class RemoteEventTest {
 
         // call event remotely
         rpcA.invokeRemoteEvent(API.class, "onMyEvent", new MyEvent("myObject", "Hello World!"));
+        rpcA.invokeRemoteEvent(API.class, "onMyEvent", new MyEvent("myObject", "Hello World 2!"));
+
+        try { Thread.sleep(200); }
+        catch (Exception e) { e.printStackTrace(); }
     }
 
 }

@@ -4,8 +4,7 @@ import lombok.*;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
+@Data
 public class MCallRemote {
 
     public static final String NAME = "rpcivk";

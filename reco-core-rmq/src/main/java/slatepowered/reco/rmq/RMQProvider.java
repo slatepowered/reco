@@ -20,8 +20,8 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
     // logger
     static final Logger LOGGER = Logger.getLogger("RMQProvider");
 
-    public static final String EXCHANGE_NAME      = "comm";
-    public static final String PUBLISH_QUEUE_NAME = "pub";
+    public static final String EXCHANGE_NAME         = "comm";
+    public static final String PUBLISH_EXCHANGE_NAME = "pub";
 
     ////////////////////////////////////////
 
@@ -60,6 +60,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
 
             // declare communication exchange
             rmqChannel.exchangeDeclare(EXCHANGE_NAME, "topic");
+            rmqChannel.exchangeDeclare(PUBLISH_EXCHANGE_NAME, "fanout");
 
             bind();
         } catch (Exception e) {
@@ -84,11 +85,11 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             rmqChannel.basicConsume(localName, true, (consumerTag, message) -> receiveRMQ(message, localName), consumerTag -> { });
 
             // declare and bind pub queue
-            rmqChannel.queueDeclare(PUBLISH_QUEUE_NAME, false, false, false, null);
-            rmqChannel.queueBind(PUBLISH_QUEUE_NAME, EXCHANGE_NAME, PUBLISH_QUEUE_NAME);
+            rmqChannel.queueDeclare(localName, false, false, false, null);
+            rmqChannel.queueBind(localName, PUBLISH_EXCHANGE_NAME, localName);
 
             // create listener on pub queue
-            rmqChannel.basicConsume(PUBLISH_QUEUE_NAME, true, (consumerTag, message) -> receiveRMQ(message, PUBLISH_QUEUE_NAME), consumerTag -> { });
+            rmqChannel.basicConsume(localName, true, (consumerTag, message) -> receiveRMQ(message, PUBLISH_EXCHANGE_NAME), consumerTag -> { });
         } catch (Exception e) {
             LOGGER.warning("Failed to bind to local and pub queue");
             e.printStackTrace();
@@ -221,7 +222,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             byte[] bytes = packSendingMessage(message, Domain.AUX);
 
             // publish with routing key
-            rmqChannel.basicPublish(EXCHANGE_NAME, target, C_BASIC_PROPERTIES, bytes);
+            rmqChannel.basicPublish(EXCHANGE_NAME + "." + target, localName, C_BASIC_PROPERTIES, bytes);
         } catch (Exception e) {
             // rethrow error
             Throwables.sneakyThrow(e);
@@ -241,7 +242,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             byte[] bytes = packSendingMessage(message, Domain.PUBLISH);
 
             // publish with routing key
-            rmqChannel.basicPublish(EXCHANGE_NAME, PUBLISH_QUEUE_NAME, C_BASIC_PROPERTIES, bytes);
+            rmqChannel.basicPublish(PUBLISH_EXCHANGE_NAME, localName, C_BASIC_PROPERTIES, bytes);
         } catch (Exception e) {
             // rethrow error
             Throwables.sneakyThrow(e);
@@ -255,11 +256,13 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
 
         if (aux) {
             try {
-                // if auxiliary, create and listen on that queue
-                rmqChannel.queueDeclare(remote, false, false, false, null);
-                rmqChannel.queueBind(remote, EXCHANGE_NAME, localName);
+                // if auxiliary, create and listen on that exchange
+                rmqChannel.exchangeDeclare(EXCHANGE_NAME + "." + remote, "fanout");
 
-                rmqChannel.basicConsume(remote, true, (consumerTag, message) -> receiveRMQ(message, remote), consumerTag -> { });
+                rmqChannel.queueDeclare(localName, false, false, false, null);
+                rmqChannel.queueBind(localName, EXCHANGE_NAME + "." + remote, localName);
+
+                rmqChannel.basicConsume(localName, true, (consumerTag, message) -> receiveRMQ(message, remote), consumerTag -> { });
             } catch (Exception e) {
                 // rethrow error
                 Throwables.sneakyThrow(e);
