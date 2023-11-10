@@ -44,6 +44,10 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
+    tasks.withType(Javadoc) {
+        options.encoding = 'UTF-8'
+    }
+
     java {
         // By default, build for java 8
         sourceCompatibility = 8

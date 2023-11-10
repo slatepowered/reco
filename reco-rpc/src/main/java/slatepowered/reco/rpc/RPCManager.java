@@ -356,7 +356,7 @@ public class RPCManager {
 
         /* Checks for no functions */
         if (Modifier.isStatic(method.getModifiers())) return null;
-        if (method.isAnnotationPresent(NoFunction.class)) return null;
+        if (method.isAnnotationPresent(Local.class)) return null;
 
         // evaluate hooks
         for (BiFunction<CompiledInterface, Method, CompiledMethod> hook : methodCompilerHooks) {
