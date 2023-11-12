@@ -89,14 +89,14 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
             rmqChannel.exchangeDeclare(publishExchangeName, "fanout");
 
             // declare and bind local queue
-            rmqChannel.queueDeclare(localName, false, false, false, null);
+            rmqChannel.queueDeclare(localName, false, false, true, null);
             rmqChannel.queueBind(localName, exchangeName, localName);
 
             // create listener on local queue
             rmqChannel.basicConsume(localName, true, (consumerTag, message) -> receiveRMQ(message, localName), consumerTag -> { });
 
             // declare and bind pub queue
-            rmqChannel.queueDeclare(localName, false, false, false, null);
+            rmqChannel.queueDeclare(localName, false, false, true, null);
             rmqChannel.queueBind(localName, publishExchangeName, localName);
 
             // create listener on pub queue
@@ -270,7 +270,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
                 // if auxiliary, create and listen on that exchange
                 rmqChannel.exchangeDeclare(exchangeName + "." + remote, "fanout");
 
-                rmqChannel.queueDeclare(localName, false, false, false, null);
+                rmqChannel.queueDeclare(localName, false, false, true, null);
                 rmqChannel.queueBind(localName, exchangeName + "." + remote, localName);
 
                 rmqChannel.basicConsume(localName, true, (consumerTag, message) -> receiveRMQ(message, remote), consumerTag -> { });
@@ -296,6 +296,16 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
     @Override
     public void send(Message<?> message) {
         publish(message);
+    }
+
+    @Override
+    public void close() {
+        try {
+            rmqChannel.close();
+            rmqConnection.close();
+        } catch (Throwable t) {
+            Throwables.sneakyThrow(t);
+        }
     }
 
     /**

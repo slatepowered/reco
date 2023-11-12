@@ -278,6 +278,11 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
     @Override
     public abstract void publish(Message<?> message);
 
+    /**
+     * Closes this communication provider.
+     */
+    public abstract void close();
+
     ///////////////////////////
 
     @Override
