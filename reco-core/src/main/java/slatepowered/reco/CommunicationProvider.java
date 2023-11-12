@@ -63,11 +63,6 @@ public abstract class CommunicationProvider<C extends ProvidedChannel> extends A
 
     }
 
-    /**
-     * The remote name for publishing.
-     */
-    public static final String PUB_REMOTE = "pub";
-
     /////////////////////////////
 
     public CommunicationProvider(String localName) {
