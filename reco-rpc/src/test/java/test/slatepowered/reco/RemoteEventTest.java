@@ -47,7 +47,8 @@ public class RemoteEventTest {
 
     private CommunicationProvider<?> connect(String name) {
         return new RMQProvider(name, KryoSerializer.standard())
-                .connect(RMQ_HOST, RMQ_PORT, RMQ_USER, RMQ_PASSWORD, RMQ_VHOST, "test");
+                .connect(RMQ_HOST, RMQ_PORT, RMQ_USER, RMQ_PASSWORD, RMQ_VHOST)
+                .bind("test");
     }
 
     @Test

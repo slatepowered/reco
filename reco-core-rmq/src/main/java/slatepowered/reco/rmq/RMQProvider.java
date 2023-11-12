@@ -2,6 +2,7 @@ package slatepowered.reco.rmq;
 
 import com.rabbitmq.client.*;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import slatepowered.reco.BinaryCommunicationProvider;
 import slatepowered.reco.Message;
 import slatepowered.reco.ReceivedMessage;
@@ -19,6 +20,10 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
 
     // logger
     static final Logger LOGGER = Logger.getLogger("RMQProvider");
+
+    public static Builder builder(String localName) {
+        return new Builder(localName);
+    }
 
     ////////////////////////////////////////
 
@@ -44,7 +49,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
      * @param virtualHost The virtual host name.
      */
     public RMQProvider connect(String host, int port, String username, String password,
-                               String virtualHost, String exchangeName) {
+                               String virtualHost) {
         try {
             // create connection
             ConnectionFactory factory = new ConnectionFactory();
@@ -57,14 +62,6 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
 
             // create channel
             rmqChannel = rmqConnection.createChannel();
-
-            // declare communication exchanges
-            this.exchangeName = exchangeName;
-            this.publishExchangeName = exchangeName + "pub";
-            rmqChannel.exchangeDeclare(exchangeName, "topic");
-            rmqChannel.exchangeDeclare(publishExchangeName, "fanout");
-
-            bind();
         } catch (Exception e) {
             Throwables.sneakyThrow(e);
         }
@@ -76,9 +73,17 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
      * Binds this connection and starts
      * listening for messages on both the local
      * queue and the publishing queue.
+     *
+     * @param exchangeName The exchange base name to bind to.
      */
-    public RMQProvider bind() {
+    public RMQProvider bind(String exchangeName) {
         try {
+            // declare communication exchanges
+            this.exchangeName = exchangeName;
+            this.publishExchangeName = exchangeName + "pub";
+            rmqChannel.exchangeDeclare(exchangeName, "topic");
+            rmqChannel.exchangeDeclare(publishExchangeName, "fanout");
+
             // declare and bind local queue
             rmqChannel.queueDeclare(localName, false, false, false, null);
             rmqChannel.queueBind(localName, exchangeName, localName);
@@ -279,8 +284,6 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
         send(message, channel.remote);
     }
 
-    //////////////////////////////////////
-
     @Override
     public String remote() {
         return null;
@@ -289,6 +292,66 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
     @Override
     public void send(Message<?> message) {
         publish(message);
+    }
+
+    /**
+     * Builds an RMQ provider instance.
+     */
+    @RequiredArgsConstructor
+    public static class Builder {
+        /** The name of the local node. */
+        protected final String localName;
+        /** The serializer to use for message content. */
+        protected Serializer serializer;
+
+        protected String host;
+        protected int port = 5672;
+        protected String username;
+        protected String password;
+        protected String virtualHost = "/";
+
+        protected String exchangeName;
+
+        public Builder serializer(Serializer serializer) {
+            this.serializer = serializer;
+            return this;
+        }
+
+        public Builder host(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
+
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder password(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder virtualHost(String virtualHost) {
+            this.virtualHost = virtualHost;
+            return this;
+        }
+
+        public Builder exchangeName(String exchangeName) {
+            this.exchangeName = exchangeName;
+            return this;
+        }
+
+        public RMQProvider build() {
+            return new RMQProvider(localName, serializer)
+                    .connect(host, port, username, password, virtualHost)
+                    .bind(exchangeName);
+        }
     }
 
 }
