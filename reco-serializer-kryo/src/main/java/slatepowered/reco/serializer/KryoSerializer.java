@@ -1,8 +1,10 @@
 package slatepowered.reco.serializer;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.SerializerFactory;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import org.objenesis.instantiator.ObjectInstantiator;
 import org.objenesis.instantiator.basic.ConstructorInstantiator;
@@ -18,8 +20,14 @@ public class KryoSerializer implements Serializer {
         return new KryoSerializer(() -> {
             Kryo kryo = new Kryo();
             kryo.setRegistrationRequired(false);
+
             DefaultInstantiatorStrategy instantiatorStrategy = new DefaultInstantiatorStrategy();
             kryo.setInstantiatorStrategy(instantiatorStrategy);
+
+            FieldSerializer.FieldSerializerConfig fieldSerializerConfig = new FieldSerializer.FieldSerializerConfig();
+            fieldSerializerConfig.setIgnoreSyntheticFields(false);
+            kryo.setDefaultSerializer(new SerializerFactory.FieldSerializerFactory(fieldSerializerConfig));
+
             return kryo;
         });
     }
