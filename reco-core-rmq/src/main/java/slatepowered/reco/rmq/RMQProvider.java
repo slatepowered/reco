@@ -38,6 +38,10 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
         super(localName, serializer);
     }
 
+    public String getExchangeName() {
+        return exchangeName;
+    }
+
     /**
      * Connect to the RabbitMQ instance at the
      * provided host and port. The credentials and
