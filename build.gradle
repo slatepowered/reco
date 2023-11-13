@@ -37,6 +37,10 @@ subprojects {
 
     group = rootProject.group
 
+    dependencies {
+        implementation 'com.github.slatepowered.veru:veru-java8:26c2997'
+    }
+
     /* Java Compile Settings */
     compileJava.options.encoding = 'UTF-8'
 
