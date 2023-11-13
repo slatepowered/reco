@@ -38,7 +38,8 @@ subprojects {
     group = rootProject.group
 
     dependencies {
-        implementation 'com.github.slatepowered.veru:veru-java8:26c2997'
+        compileOnly 'com.github.slatepowered.veru:veru-java8:f4baeb9'
+        testImplementation 'com.github.slatepowered.veru:veru-java8:f4baeb9'
     }
 
     /* Java Compile Settings */
