@@ -9,10 +9,8 @@ import slatepowered.reco.ReceivedMessage;
 import slatepowered.reco.Serializer;
 import slatepowered.veru.misc.Throwables;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.*;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 @SuppressWarnings({ "rawtypes" })
@@ -43,6 +41,31 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
     }
 
     /**
+     * Connect this communication provider to the given
+     * RabbitMQ channel.
+     *
+     * @param rmqChannel The RabbitMQ channel.
+     * @return This.
+     */
+    public RMQProvider connect(Channel rmqChannel) {
+        this.rmqConnection = rmqChannel.getConnection();
+        this.rmqChannel = rmqChannel;
+        return this;
+    }
+
+    public static Channel makeConnection(String host, int port, String username, String password,
+                                         String virtualHost) throws IOException, TimeoutException {
+        // create connection
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(host);
+        if (port >= 0) factory.setPort(port);
+        factory.setUsername(username);
+        factory.setPassword(password);
+        factory.setVirtualHost(virtualHost);
+        return factory.newConnection().createChannel();
+    }
+
+    /**
      * Connect to the RabbitMQ instance at the
      * provided host and port. The credentials and
      * virtual host name are hard-coded.
@@ -55,17 +78,7 @@ public class RMQProvider extends BinaryCommunicationProvider<RMQChannel> {
     public RMQProvider connect(String host, int port, String username, String password,
                                String virtualHost) {
         try {
-            // create connection
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(host);
-            if (port >= 0) factory.setPort(port);
-            factory.setUsername(username);
-            factory.setPassword(password);
-            factory.setVirtualHost(virtualHost);
-            rmqConnection = factory.newConnection();
-
-            // create channel
-            rmqChannel = rmqConnection.createChannel();
+            connect(makeConnection(host, port, username, password, virtualHost));
         } catch (Exception e) {
             Throwables.sneakyThrow(e);
         }
