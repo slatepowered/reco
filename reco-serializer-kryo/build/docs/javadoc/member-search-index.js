@@ -1,1 +1,0 @@
-memberSearchIndex = [{"p":"slatepowered.reco.serializer","c":"KryoSerializer","l":"read(InputStream)","u":"read(java.io.InputStream)"},{"p":"slatepowered.reco.serializer","c":"KryoSerializer","l":"standard()"},{"p":"slatepowered.reco.serializer","c":"KryoSerializer","l":"write(OutputStream, Object)","u":"write(java.io.OutputStream,java.lang.Object)"}];updateSearchResults();

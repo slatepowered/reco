@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"slatepowered.reco.rpc"},{"l":"slatepowered.reco.rpc.event"},{"l":"slatepowered.reco.rpc.function"},{"l":"slatepowered.reco.rpc.objects"},{"l":"slatepowered.reco.rpc.security"}];updateSearchResults();
