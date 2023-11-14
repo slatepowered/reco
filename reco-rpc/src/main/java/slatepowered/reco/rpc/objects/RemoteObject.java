@@ -15,6 +15,8 @@ public interface RemoteObject<A extends RemoteAPI> {
     /**
      * @return The remote API.
      */
-    A api();
+    default A api() {
+        return null;
+    }
 
 }

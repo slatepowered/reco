@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"slatepowered.reco.rmq","l":"RMQChannel"},{"p":"slatepowered.reco.rmq","l":"RMQProvider"}];updateSearchResults();

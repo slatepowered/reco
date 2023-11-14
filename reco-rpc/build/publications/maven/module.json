@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.github.slatepowered.reco",
+    "module": "reco-rpc",
+    "version": "unspecified",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.3"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "reco-rpc-unspecified.jar",
+          "url": "reco-rpc-unspecified.jar",
+          "size": 41006,
+          "sha512": "5351239ed7d5bca5fc799c04ed2c6b2686e0aa2e2c38ed1d02cf5a16956f1dab51519e7b0447a1ff33fe5f2bb8717b4c21dc22ea5b87d42433bc3ba07a1f9e35",
+          "sha256": "9d2d5743709976de7f18b54e704eae91fb78674d8d61bf6ab9a2b1f8e2e9a38d",
+          "sha1": "39813eaa0fb4735283a14041f54e0d1f63c14e49",
+          "md5": "189df3d891dc1621f9e5c246e10677c5"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.slatepowered.reco",
+          "module": "reco-core",
+          "version": {
+            "requires": "unspecified"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "reco-rpc-unspecified.jar",
+          "url": "reco-rpc-unspecified.jar",
+          "size": 41006,
+          "sha512": "5351239ed7d5bca5fc799c04ed2c6b2686e0aa2e2c38ed1d02cf5a16956f1dab51519e7b0447a1ff33fe5f2bb8717b4c21dc22ea5b87d42433bc3ba07a1f9e35",
+          "sha256": "9d2d5743709976de7f18b54e704eae91fb78674d8d61bf6ab9a2b1f8e2e9a38d",
+          "sha1": "39813eaa0fb4735283a14041f54e0d1f63c14e49",
+          "md5": "189df3d891dc1621f9e5c246e10677c5"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "reco-rpc-unspecified-sources.jar",
+          "url": "reco-rpc-unspecified-sources.jar",
+          "size": 22859,
+          "sha512": "6676ee1845f4e86e6d28f3818b4188a32b42b18b119c63c88222b4a44e05bd01d40ca9b39479323e657aa31ac2b6b31d20eab1f575ee0edfc3b27fcd4edb1d1e",
+          "sha256": "0706e0c4f212d46219992a00b155cdf47592a9db6c12dfc3f58ad71f57012986",
+          "sha1": "74f39aa4ee05ede5e001edd9e3f31294e8b6c8ae",
+          "md5": "6f7ebd06a8a4e6a19e6780f3f73fdc8a"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "reco-rpc-unspecified-javadoc.jar",
+          "url": "reco-rpc-unspecified-javadoc.jar",
+          "size": 215316,
+          "sha512": "b07e3e30241869c19544a09a216cbcfc287d431a408b0060596e5edfec67d3671e42d7ae089b4f7c1bb64276d3b152715458f26887c954e1740f67618c123b36",
+          "sha256": "be2023eabf473600c278a1e5ba812ad6dd2fcdaad6b52404aff6b37113ded715",
+          "sha1": "cddc1095446c8820a9ae5bf88423895e15403309",
+          "md5": "f0050bc1d59a032ebe086f1e0114286f"
+        }
+      ]
+    }
+  ]
+}

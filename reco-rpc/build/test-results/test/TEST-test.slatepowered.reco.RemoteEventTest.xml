@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="test.slatepowered.reco.RemoteEventTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2023-11-09T14:48:29" hostname="GOOFY-AHH-LAPTO" time="0.416">
+  <properties/>
+  <testcase name="test_RemoteEvents()" classname="test.slatepowered.reco.RemoteEventTest" time="0.416"/>
+  <system-out><![CDATA[RemoteEventTest.MyEvent(object=myObject, message=Hello World!)
+RemoteEventTest.MyEvent(object=myObject, message=Hello World 2!)
+]]></system-out>
+  <system-err><![CDATA[SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+]]></system-err>
+</testsuite>
